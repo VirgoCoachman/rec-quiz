@@ -94,10 +94,21 @@ final class _QuestionView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                strings.questionHeading,
+                strings.questionProgress(
+                  state.currentNumber,
+                  state.totalQuestions,
+                ),
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: Theme.of(context).colorScheme.secondary,
                   fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: state.currentNumber / state.totalQuestions,
+                semanticsValue: strings.questionProgress(
+                  state.currentNumber,
+                  state.totalQuestions,
                 ),
               ),
               const SizedBox(height: 8),
@@ -124,8 +135,12 @@ final class _QuestionView extends StatelessWidget {
                 const SizedBox(height: 20),
                 FilledButton(
                   onPressed: () =>
-                      context.read<QuizBloc>().add(const QuizResultRequested()),
-                  child: Text(strings.showResultButton),
+                      context.read<QuizBloc>().add(const QuizNextRequested()),
+                  child: Text(
+                    state.isLastQuestion
+                        ? strings.showResultButton
+                        : strings.nextQuestionButton,
+                  ),
                 ),
               ],
             ],

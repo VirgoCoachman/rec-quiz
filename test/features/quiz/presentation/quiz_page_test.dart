@@ -3,46 +3,71 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:rec_quiz/app/app.dart';
 import 'package:rec_quiz/features/quiz/domain/question.dart';
 import 'package:rec_quiz/features/quiz/domain/question_repository.dart';
+import 'package:rec_quiz/features/quiz/domain/quiz_question_selector.dart';
+
+import '../quiz_test_data.dart';
 
 void main() {
-  testWidgets('completes the accessible one-question learning loop', (
-    tester,
-  ) async {
+  final questions = buildQuizQuestions();
+
+  testWidgets('completes the accessible ten-question quiz', (tester) async {
     final semantics = tester.ensureSemantics();
+    final seeds = _SeedSequence([42, 99]);
+    final firstOrder = const QuizQuestionSelector().select(
+      questions: questions,
+      count: 10,
+      seed: 42,
+    );
+    final secondOrder = const QuizQuestionSelector().select(
+      questions: questions,
+      count: 10,
+      seed: 99,
+    );
 
     await tester.pumpWidget(
-      RecQuizApp(questionRepository: _FakeQuestionRepository(_question)),
+      RecQuizApp(
+        questionRepository: _FakeQuestionRepository(questions),
+        seedGenerator: seeds.next,
+      ),
     );
 
     expect(find.text('Quiz REC'), findsOneWidget);
     await tester.tap(find.text('Commencer'));
     await tester.pumpAndSettle();
 
-    expect(find.text(_question.prompt), findsOneWidget);
-    expect(
-      find.bySemanticsLabel('Réponse : À cause de son infidélité'),
-      findsOneWidget,
-    );
+    for (var index = 0; index < firstOrder.length; index++) {
+      final question = firstOrder[index];
+      expect(find.text('Question ${index + 1} sur 10'), findsOneWidget);
+      expect(find.text(question.prompt), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Réponse : ${question.correctOption.label}'),
+        findsOneWidget,
+      );
 
-    await tester.tap(find.text('À cause de son infidélité'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text(question.correctOption.label));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Bonne réponse !'), findsOneWidget);
-    expect(find.text(_question.explanation), findsOneWidget);
-    expect(find.text(_question.biblicalReference), findsOneWidget);
+      expect(find.text('Bonne réponse !'), findsOneWidget);
+      expect(find.text(question.explanation), findsOneWidget);
+      expect(find.text(question.biblicalReference), findsOneWidget);
 
-    final showResultButton = find.text('Voir mon résultat');
-    await tester.ensureVisible(showResultButton);
-    await tester.pumpAndSettle();
-    await tester.tap(showResultButton);
-    await tester.pumpAndSettle();
+      final actionLabel = index == firstOrder.length - 1
+          ? 'Voir mon résultat'
+          : 'Question suivante';
+      final actionButton = find.text(actionLabel);
+      await tester.ensureVisible(actionButton);
+      await tester.pumpAndSettle();
+      await tester.tap(actionButton);
+      await tester.pumpAndSettle();
+    }
 
-    expect(find.text('Votre score : 1/1'), findsOneWidget);
+    expect(find.text('Votre score : 10/10'), findsOneWidget);
 
     await tester.tap(find.text('Recommencer'));
     await tester.pumpAndSettle();
 
-    expect(find.text(_question.prompt), findsOneWidget);
+    expect(find.text('Question 1 sur 10'), findsOneWidget);
+    expect(find.text(secondOrder.first.prompt), findsOneWidget);
     expect(find.text('Bonne réponse !'), findsNothing);
     semantics.dispose();
   });
@@ -51,69 +76,81 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      RecQuizApp(questionRepository: _FailingQuestionRepository()),
+      RecQuizApp(
+        questionRepository: _FailingQuestionRepository(),
+        seedGenerator: () => 42,
+      ),
     );
 
     await tester.tap(find.text('Commencer'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Impossible de charger la question.'), findsOneWidget);
+    expect(find.text('Impossible de charger les questions.'), findsOneWidget);
     expect(find.text('Réessayer'), findsOneWidget);
   });
 
-  testWidgets('shows textual and visual feedback for an incorrect answer', (
+  testWidgets('shows feedback for an incorrect answer and keeps score zero', (
     tester,
   ) async {
+    final ordered = const QuizQuestionSelector().select(
+      questions: questions,
+      count: 10,
+      seed: 42,
+    );
+    final first = ordered.first;
+    final incorrect = first.options.firstWhere(
+      (option) => option.id != first.correctOptionId,
+    );
+
     await tester.pumpWidget(
-      RecQuizApp(questionRepository: _FakeQuestionRepository(_question)),
+      RecQuizApp(
+        questionRepository: _FakeQuestionRepository(questions),
+        seedGenerator: () => 42,
+      ),
     );
 
     await tester.tap(find.text('Commencer'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Parce qu’il refusa le Temple'));
+    await tester.tap(find.text(incorrect.label));
     await tester.pumpAndSettle();
 
     expect(find.text('Ce n’est pas la bonne réponse.'), findsOneWidget);
     expect(
-      find.text('Bonne réponse : À cause de son infidélité'),
+      find.text('Bonne réponse : ${first.correctOption.label}'),
       findsOneWidget,
     );
     expect(find.byIcon(Icons.cancel_outlined), findsOneWidget);
     expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+
+    final nextButton = find.text('Question suivante');
+    await tester.ensureVisible(nextButton);
+    await tester.tap(nextButton);
+    await tester.pumpAndSettle();
+    expect(find.text('Question 2 sur 10'), findsOneWidget);
   });
 }
 
-final Question _question = Question(
-  id: 'saul-death-reason',
-  prompt: 'Pourquoi Saül mourut-il selon 1 Chroniques 10 ?',
-  options: [
-    QuestionOption(id: 'infidelity', label: 'À cause de son infidélité'),
-    QuestionOption(id: 'temple', label: 'Parce qu’il refusa le Temple'),
-    QuestionOption(id: 'division', label: 'Parce qu’il divisa le royaume'),
-  ],
-  correctOptionId: 'infidelity',
-  explanation: 'Saül mourut à cause de son infidélité envers l’Éternel.',
-  biblicalReference: '1 Chroniques 10:13-14',
-  difficulty: QuestionDifficulty.easy,
-  theme: 'fidelite',
-  subject: 'Saül',
-  languageCode: 'fr',
-  contentVersion: 1,
-  isActive: true,
-);
-
 final class _FakeQuestionRepository implements QuestionRepository {
-  const _FakeQuestionRepository(this.question);
+  const _FakeQuestionRepository(this.questions);
 
-  final Question question;
+  final List<Question> questions;
 
   @override
-  Future<Question> loadFirstActiveQuestion() async => question;
+  Future<List<Question>> loadActiveQuestions() async => questions;
 }
 
 final class _FailingQuestionRepository implements QuestionRepository {
   @override
-  Future<Question> loadFirstActiveQuestion() {
+  Future<List<Question>> loadActiveQuestions() {
     throw const FormatException('Invalid local content');
   }
+}
+
+final class _SeedSequence {
+  _SeedSequence(this._seeds);
+
+  final List<int> _seeds;
+  var _index = 0;
+
+  int next() => _seeds[_index++];
 }

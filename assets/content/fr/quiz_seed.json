@@ -18,6 +18,168 @@
       "languageCode": "fr",
       "contentVersion": 1,
       "isActive": true
+    },
+    {
+      "id": "fr-1ch-11-29-david-chapters-v1",
+      "prompt": "Dans quels chapitres de 1 Chroniques le règne de David est-il principalement présenté ?",
+      "options": [
+        {"id": "chapters-11-29", "label": "1 Chroniques 11 à 29"},
+        {"id": "chapters-10-18", "label": "1 Chroniques 10 à 18"},
+        {"id": "chapters-15-24", "label": "1 Chroniques 15 à 24"}
+      ],
+      "correctOptionId": "chapters-11-29",
+      "explanation": "Le règne de David, la prise de Jérusalem, l’arche et la préparation du Temple occupent 1 Chroniques 11 à 29.",
+      "biblicalReference": "1 Chroniques 11–29",
+      "difficulty": "easy",
+      "theme": "carte_biblique",
+      "subject": "David",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-1-9-solomon-temple-v1",
+      "prompt": "Quel roi construisit le Temple présenté dans 2 Chroniques 1 à 9 ?",
+      "options": [
+        {"id": "solomon", "label": "Salomon"},
+        {"id": "david", "label": "David"},
+        {"id": "rehoboam", "label": "Roboam"}
+      ],
+      "correctOptionId": "solomon",
+      "explanation": "2 Chroniques 1 à 9 présente Salomon, sa sagesse et la construction du Temple.",
+      "biblicalReference": "2 Chroniques 1–9",
+      "difficulty": "easy",
+      "theme": "temple",
+      "subject": "Salomon",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-10-rehoboam-division-v1",
+      "prompt": "Sous quel roi le royaume se divisa-t-il dans 2 Chroniques 10 ?",
+      "options": [
+        {"id": "rehoboam", "label": "Roboam"},
+        {"id": "asa", "label": "Asa"},
+        {"id": "jehoshaphat", "label": "Josaphat"}
+      ],
+      "correctOptionId": "rehoboam",
+      "explanation": "Le refus de Roboam d’alléger le joug du peuple précéda la division du royaume.",
+      "biblicalReference": "2 Chroniques 10:1-19",
+      "difficulty": "easy",
+      "theme": "division_du_royaume",
+      "subject": "Roboam",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-14-16-asa-chapters-v1",
+      "prompt": "Dans quels chapitres de 2 Chroniques le règne d’Asa est-il principalement présenté ?",
+      "options": [
+        {"id": "chapters-14-16", "label": "2 Chroniques 14 à 16"},
+        {"id": "chapters-17-20", "label": "2 Chroniques 17 à 20"},
+        {"id": "chapters-21-23", "label": "2 Chroniques 21 à 23"}
+      ],
+      "correctOptionId": "chapters-14-16",
+      "explanation": "Les réformes, les victoires puis le déclin spirituel d’Asa sont racontés dans 2 Chroniques 14 à 16.",
+      "biblicalReference": "2 Chroniques 14–16",
+      "difficulty": "medium",
+      "theme": "carte_biblique",
+      "subject": "Asa",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-17-jehoshaphat-teaching-v1",
+      "prompt": "Quel roi envoya des responsables enseigner la loi de l’Éternel dans les villes de Juda ?",
+      "options": [
+        {"id": "jehoshaphat", "label": "Josaphat"},
+        {"id": "joram", "label": "Joram"},
+        {"id": "ahaz", "label": "Achaz"}
+      ],
+      "correctOptionId": "jehoshaphat",
+      "explanation": "Josaphat organisa un enseignement de la loi de l’Éternel dans les villes de Juda.",
+      "biblicalReference": "2 Chroniques 17:7-9",
+      "difficulty": "medium",
+      "theme": "enseignement_de_la_loi",
+      "subject": "Josaphat",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-29-32-hezekiah-chapters-v1",
+      "prompt": "Dans quels chapitres de 2 Chroniques trouve-t-on principalement le règne d’Ézéchias ?",
+      "options": [
+        {"id": "chapters-29-32", "label": "2 Chroniques 29 à 32"},
+        {"id": "chapters-25-27", "label": "2 Chroniques 25 à 27"},
+        {"id": "chapters-34-35", "label": "2 Chroniques 34 à 35"}
+      ],
+      "correctOptionId": "chapters-29-32",
+      "explanation": "La réforme d’Ézéchias, la Pâque et l’invasion assyrienne sont présentées dans 2 Chroniques 29 à 32.",
+      "biblicalReference": "2 Chroniques 29–32",
+      "difficulty": "medium",
+      "theme": "carte_biblique",
+      "subject": "Ézéchias",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-33-manasseh-repentance-v1",
+      "prompt": "Que fit Manassé après avoir été humilié ?",
+      "options": [
+        {"id": "repented", "label": "Il s’humilia et pria Dieu"},
+        {"id": "divided", "label": "Il divisa le royaume"},
+        {"id": "burned-temple", "label": "Il détruisit le Temple"}
+      ],
+      "correctOptionId": "repented",
+      "explanation": "Dans sa détresse, Manassé s’humilia profondément et pria Dieu, qui le ramena à Jérusalem.",
+      "biblicalReference": "2 Chroniques 33:12-13",
+      "difficulty": "medium",
+      "theme": "repentance",
+      "subject": "Manassé",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-34-josiah-law-v1",
+      "prompt": "Sous quel roi le livre de la loi fut-il retrouvé dans le Temple ?",
+      "options": [
+        {"id": "josiah", "label": "Josias"},
+        {"id": "amon", "label": "Amon"},
+        {"id": "joash", "label": "Joas"}
+      ],
+      "correctOptionId": "josiah",
+      "explanation": "Le livre de la loi fut retrouvé pendant les travaux du Temple sous le règne de Josias.",
+      "biblicalReference": "2 Chroniques 34:14-21",
+      "difficulty": "easy",
+      "theme": "reforme",
+      "subject": "Josias",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-36-zedekiah-fall-v1",
+      "prompt": "Quel événement marque la fin du règne de Sédécias dans 2 Chroniques 36 ?",
+      "options": [
+        {"id": "fall-exile", "label": "La destruction de Jérusalem et l’exil"},
+        {"id": "temple-built", "label": "La construction du premier Temple"},
+        {"id": "kingdom-united", "label": "La réunification du royaume"}
+      ],
+      "correctOptionId": "fall-exile",
+      "explanation": "La rébellion et l’endurcissement conduisirent à la destruction de Jérusalem et à l’exil.",
+      "biblicalReference": "2 Chroniques 36:11-21",
+      "difficulty": "medium",
+      "theme": "jugement_et_exil",
+      "subject": "Sédécias",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
     }
   ]
 }

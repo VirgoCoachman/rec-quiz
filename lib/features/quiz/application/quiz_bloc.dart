@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../domain/question.dart';
-import 'load_quiz_question.dart';
+import 'start_quiz_session.dart';
 
 sealed class QuizEvent {
   const QuizEvent();
@@ -17,8 +17,8 @@ final class QuizAnswerSubmitted extends QuizEvent {
   final String optionId;
 }
 
-final class QuizResultRequested extends QuizEvent {
-  const QuizResultRequested();
+final class QuizNextRequested extends QuizEvent {
+  const QuizNextRequested();
 }
 
 final class QuizRestarted extends QuizEvent {
@@ -38,12 +38,23 @@ final class QuizLoading extends QuizState {
 }
 
 final class QuizQuestionReady extends QuizState {
-  const QuizQuestionReady({required this.question, this.evaluation});
+  QuizQuestionReady({
+    required List<Question> questions,
+    required this.currentIndex,
+    required this.score,
+    this.evaluation,
+  }) : questions = List.unmodifiable(questions);
 
-  final Question question;
+  final List<Question> questions;
+  final int currentIndex;
+  final int score;
   final AnswerEvaluation? evaluation;
 
+  Question get question => questions[currentIndex];
+  int get currentNumber => currentIndex + 1;
+  int get totalQuestions => questions.length;
   bool get hasAnswered => evaluation != null;
+  bool get isLastQuestion => currentIndex == questions.length - 1;
 }
 
 final class QuizCompleted extends QuizState {
@@ -58,20 +69,20 @@ final class QuizFailure extends QuizState {
 }
 
 final class QuizBloc extends Bloc<QuizEvent, QuizState> {
-  QuizBloc(this._loadQuizQuestion) : super(const QuizInitial()) {
-    on<QuizStarted>(_loadQuestion);
-    on<QuizRestarted>(_loadQuestion);
+  QuizBloc(this._startQuizSession) : super(const QuizInitial()) {
+    on<QuizStarted>(_loadSession);
+    on<QuizRestarted>(_loadSession);
     on<QuizAnswerSubmitted>(_submitAnswer);
-    on<QuizResultRequested>(_showResult);
+    on<QuizNextRequested>(_moveNext);
   }
 
-  final LoadQuizQuestion _loadQuizQuestion;
+  final StartQuizSession _startQuizSession;
 
-  Future<void> _loadQuestion(QuizEvent event, Emitter<QuizState> emit) async {
+  Future<void> _loadSession(QuizEvent event, Emitter<QuizState> emit) async {
     emit(const QuizLoading());
     try {
-      final question = await _loadQuizQuestion();
-      emit(QuizQuestionReady(question: question));
+      final questions = await _startQuizSession();
+      emit(QuizQuestionReady(questions: questions, currentIndex: 0, score: 0));
     } on Object catch (error, stackTrace) {
       addError(error, stackTrace);
       emit(const QuizFailure());
@@ -87,20 +98,36 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     final evaluation = currentState.question.evaluateAnswer(event.optionId);
     emit(
       QuizQuestionReady(
-        question: currentState.question,
+        questions: currentState.questions,
+        currentIndex: currentState.currentIndex,
+        score: currentState.score + evaluation.score,
         evaluation: evaluation,
       ),
     );
   }
 
-  void _showResult(QuizResultRequested event, Emitter<QuizState> emit) {
+  void _moveNext(QuizNextRequested event, Emitter<QuizState> emit) {
     final currentState = state;
     if (currentState is! QuizQuestionReady || !currentState.hasAnswered) {
       return;
     }
 
+    if (currentState.isLastQuestion) {
+      emit(
+        QuizCompleted(
+          score: currentState.score,
+          totalQuestions: currentState.totalQuestions,
+        ),
+      );
+      return;
+    }
+
     emit(
-      QuizCompleted(score: currentState.evaluation!.score, totalQuestions: 1),
+      QuizQuestionReady(
+        questions: currentState.questions,
+        currentIndex: currentState.currentIndex + 1,
+        score: currentState.score,
+      ),
     );
   }
 }

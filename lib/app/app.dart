@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../features/quiz/application/load_quiz_question.dart';
 import '../features/quiz/application/quiz_bloc.dart';
+import '../features/quiz/application/start_quiz_session.dart';
 import '../features/quiz/domain/question_repository.dart';
+import '../features/quiz/domain/quiz_question_selector.dart';
 import '../features/quiz/infrastructure/bundled_question_repository.dart';
 import '../features/quiz/presentation/quiz_page.dart';
 import '../l10n/app_localizations.dart';
 
 final class RecQuizApp extends StatelessWidget {
-  const RecQuizApp({super.key, this.questionRepository});
+  const RecQuizApp({super.key, this.questionRepository, this.seedGenerator});
 
   final QuestionRepository? questionRepository;
+  final SeedGenerator? seedGenerator;
 
   @override
   Widget build(BuildContext context) {
     final repository = questionRepository ?? BundledQuestionRepository();
+    final generateSeed =
+        seedGenerator ?? () => DateTime.now().microsecondsSinceEpoch;
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -25,7 +29,13 @@ final class RecQuizApp extends StatelessWidget {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       theme: _buildTheme(),
       home: BlocProvider(
-        create: (_) => QuizBloc(LoadQuizQuestion(repository)),
+        create: (_) => QuizBloc(
+          StartQuizSession(
+            repository: repository,
+            selector: const QuizQuestionSelector(),
+            seedGenerator: generateSeed,
+          ),
+        ),
         child: const QuizPage(),
       ),
     );

@@ -30,15 +30,26 @@ void main() {
     () async {
       final repository = BundledQuestionRepository();
 
-      final question = await repository.loadFirstActiveQuestion();
+      final questions = await repository.loadActiveQuestions();
 
-      expect(question.biblicalReference, startsWith('1 Chroniques 10'));
-      expect(question.prompt.toLowerCase(), isNot(contains('généalog')));
-      expect(question.explanation.toLowerCase(), isNot(contains('généalog')));
-      expect(question.subject.toLowerCase(), isNot(contains('généalog')));
+      expect(questions, hasLength(10));
+      expect(questions.map((question) => question.id).toSet(), hasLength(10));
+      expect(questions.first.biblicalReference, startsWith('1 Chroniques 10'));
       expect(
-        question.options.map((option) => option.label.toLowerCase()),
-        everyElement(isNot(contains('généalog'))),
+        questions
+            .expand((question) sync* {
+              yield question.prompt;
+              yield question.explanation;
+              yield question.subject;
+              yield* question.options.map((option) => option.label);
+            })
+            .map((text) => text.toLowerCase()),
+        everyElement(
+          allOf(
+            isNot(contains('généalog')),
+            isNot(contains('1 chroniques 1 à 9')),
+          ),
+        ),
       );
     },
   );

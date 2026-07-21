@@ -19,7 +19,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get startButton => 'Commencer';
 
   @override
-  String get questionHeading => 'Question';
+  String questionProgress(int current, int total) {
+    return 'Question $current sur $total';
+  }
 
   @override
   String answerSemantics(String answer) {
@@ -44,6 +46,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get explanationHeading => 'À retenir';
 
   @override
+  String get nextQuestionButton => 'Question suivante';
+
+  @override
   String get showResultButton => 'Voir mon résultat';
 
   @override
@@ -58,7 +63,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get restartButton => 'Recommencer';
 
   @override
-  String get loadError => 'Impossible de charger la question.';
+  String get loadError => 'Impossible de charger les questions.';
 
   @override
   String get retryButton => 'Réessayer';

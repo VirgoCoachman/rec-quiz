@@ -18,7 +18,7 @@ final class BundledQuestionRepository implements QuestionRepository {
   final String assetPath;
 
   @override
-  Future<Question> loadFirstActiveQuestion() async {
+  Future<List<Question>> loadActiveQuestions() async {
     final source = await _assetTextLoader(assetPath);
     final decoded = jsonDecode(source);
     if (decoded is! Map<String, Object?>) {
@@ -30,16 +30,20 @@ final class BundledQuestionRepository implements QuestionRepository {
       throw const FormatException('The question seed must contain a list.');
     }
 
+    final questions = <Question>[];
     for (final rawQuestion in rawQuestions) {
       if (rawQuestion is! Map<String, Object?>) {
         throw const FormatException('Each question must be an object.');
       }
       final question = QuestionDto.fromJson(rawQuestion).toDomain();
       if (question.isActive) {
-        return question;
+        questions.add(question);
       }
     }
 
-    throw const FormatException('The question seed has no active question.');
+    if (questions.isEmpty) {
+      throw const FormatException('The question seed has no active question.');
+    }
+    return List.unmodifiable(questions);
   }
 }

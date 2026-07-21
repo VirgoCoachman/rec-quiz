@@ -112,11 +112,11 @@ abstract class AppLocalizations {
   /// **'Commencer'**
   String get startButton;
 
-  /// No description provided for @questionHeading.
+  /// No description provided for @questionProgress.
   ///
   /// In fr, this message translates to:
-  /// **'Question'**
-  String get questionHeading;
+  /// **'Question {current} sur {total}'**
+  String questionProgress(int current, int total);
 
   /// No description provided for @answerSemantics.
   ///
@@ -154,6 +154,12 @@ abstract class AppLocalizations {
   /// **'À retenir'**
   String get explanationHeading;
 
+  /// No description provided for @nextQuestionButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Question suivante'**
+  String get nextQuestionButton;
+
   /// No description provided for @showResultButton.
   ///
   /// In fr, this message translates to:
@@ -181,7 +187,7 @@ abstract class AppLocalizations {
   /// No description provided for @loadError.
   ///
   /// In fr, this message translates to:
-  /// **'Impossible de charger la question.'**
+  /// **'Impossible de charger les questions.'**
   String get loadError;
 
   /// No description provided for @retryButton.
