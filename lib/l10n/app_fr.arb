@@ -1,0 +1,31 @@
+{
+  "@@locale": "fr",
+  "appTitle": "Quiz REC",
+  "welcomeMessage": "Découvre l’histoire des rois dans les Chroniques, une question à la fois.",
+  "startButton": "Commencer",
+  "questionHeading": "Question",
+  "answerSemantics": "Réponse : {answer}",
+  "@answerSemantics": {
+    "placeholders": {"answer": {"type": "String"}}
+  },
+  "correctFeedback": "Bonne réponse !",
+  "incorrectFeedback": "Ce n’est pas la bonne réponse.",
+  "correctAnswer": "Bonne réponse : {answer}",
+  "@correctAnswer": {
+    "placeholders": {"answer": {"type": "String"}}
+  },
+  "biblicalReferenceHeading": "Référence biblique",
+  "explanationHeading": "À retenir",
+  "showResultButton": "Voir mon résultat",
+  "resultHeading": "Résultat",
+  "score": "Votre score : {score}/{total}",
+  "@score": {
+    "placeholders": {
+      "score": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "restartButton": "Recommencer",
+  "loadError": "Impossible de charger la question.",
+  "retryButton": "Réessayer"
+}

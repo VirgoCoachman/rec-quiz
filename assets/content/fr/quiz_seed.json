@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "questions": [
+    {
+      "id": "fr-1ch-10-saul-infidelity-v1",
+      "prompt": "Pourquoi Saül mourut-il selon 1 Chroniques 10 ?",
+      "options": [
+        {"id": "infidelity", "label": "À cause de son infidélité envers l’Éternel"},
+        {"id": "temple", "label": "Parce qu’il refusa de bâtir le Temple"},
+        {"id": "division", "label": "Parce qu’il divisa le royaume"}
+      ],
+      "correctOptionId": "infidelity",
+      "explanation": "1 Chroniques 10:13-14 relie la mort de Saül à son infidélité envers l’Éternel et au fait qu’il ne consulta pas l’Éternel.",
+      "biblicalReference": "1 Chroniques 10:13-14",
+      "difficulty": "easy",
+      "theme": "fidelite",
+      "subject": "Saül",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    }
+  ]
+}
