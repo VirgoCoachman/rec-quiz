@@ -1,6 +1,6 @@
 # rec_quiz
 
-A new Flutter project.
+QCM pour les élèves de la REC (Réformation Chrétienne) au sein de la Communauté Evangélique Christ la Gloire de la Nouvelle Jérusalem
 
 ## Getting Started
 
