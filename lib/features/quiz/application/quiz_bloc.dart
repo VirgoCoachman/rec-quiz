@@ -56,6 +56,10 @@ final class QuizResumeRequested extends QuizEvent {
   const QuizResumeRequested();
 }
 
+final class QuizDiscardRequested extends QuizEvent {
+  const QuizDiscardRequested();
+}
+
 sealed class QuizState {
   const QuizState({required this.bestScore, required this.length});
 
@@ -155,6 +159,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     on<QuizMistakesReviewStarted>(_startMistakesReview);
     on<QuizPauseRequested>(_pauseSession);
     on<QuizResumeRequested>(_resumeSession);
+    on<QuizDiscardRequested>(_discardSession);
     on<QuizAnswerSubmitted>(_submitAnswer);
     on<QuizNextRequested>(_moveNext);
   }
@@ -322,6 +327,29 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     }
     _sessionTimer.resume();
     emit(currentState.session);
+  }
+
+  Future<void> _discardSession(
+    QuizDiscardRequested event,
+    Emitter<QuizState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! QuizPaused) {
+      return;
+    }
+
+    try {
+      await _pausedSessionRepository?.clear();
+    } on Object catch (error, stackTrace) {
+      addError(error, stackTrace);
+      return;
+    }
+    emit(
+      QuizInitial(
+        bestScore: currentState.bestScore,
+        length: currentState.length,
+      ),
+    );
   }
 
   PausedQuizSession _pausedSnapshot(

@@ -18,6 +18,11 @@
   "pausedHeading": "Quiz en pause",
   "pausedMessage": "Ta progression est conservée. Reprends quand tu es prêt.",
   "resumeQuizButton": "Reprendre le quiz",
+  "discardQuizButton": "Abandonner le quiz",
+  "discardQuizDialogTitle": "Abandonner ce quiz ?",
+  "discardQuizDialogMessage": "Ta progression sauvegardée sera supprimée.",
+  "discardQuizConfirmButton": "Abandonner",
+  "cancelButton": "Annuler",
   "questionProgress": "Question {current} sur {total}",
   "@questionProgress": {
     "placeholders": {

@@ -724,6 +724,41 @@ void main() {
       expect(sessionTimer.resumeCount, 0);
     },
   );
+
+  testWidgets('confirms before discarding a paused quiz', (tester) async {
+    await tester.pumpWidget(
+      RecQuizApp(
+        questionRepository: _FakeQuestionRepository(questions),
+        bestScoreRepository: _MemoryBestScoreRepository({}),
+        soundSettingsRepository: _MemorySoundSettingsRepository(false),
+        quizFeedbackPlayer: _RecordingQuizFeedbackPlayer(),
+        quizSessionTimer: _FakeQuizSessionTimer(const Duration(seconds: 30)),
+        seedGenerator: () => 42,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Commencer'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Mettre le quiz en pause'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Abandonner le quiz'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Abandonner ce quiz ?'), findsOneWidget);
+    expect(find.text('Annuler'), findsOneWidget);
+    await tester.tap(find.text('Annuler'));
+    await tester.pumpAndSettle();
+    expect(find.text('Quiz en pause'), findsOneWidget);
+
+    await tester.tap(find.text('Abandonner le quiz'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Abandonner'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nombre de questions'), findsOneWidget);
+    expect(find.text('Quiz en pause'), findsNothing);
+  });
 }
 
 final class _FakeQuestionRepository implements QuestionRepository {

@@ -172,6 +172,32 @@ final class _PausedView extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () async {
+                  final shouldDiscard = await showDialog<bool>(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      title: Text(strings.discardQuizDialogTitle),
+                      content: Text(strings.discardQuizDialogMessage),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, false),
+                          child: Text(strings.cancelButton),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(dialogContext, true),
+                          child: Text(strings.discardQuizConfirmButton),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (shouldDiscard == true && context.mounted) {
+                    context.read<QuizBloc>().add(const QuizDiscardRequested());
+                  }
+                },
+                child: Text(strings.discardQuizButton),
+              ),
             ],
           ),
         ),

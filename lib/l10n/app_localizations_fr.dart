@@ -51,6 +51,22 @@ class AppLocalizationsFr extends AppLocalizations {
   String get resumeQuizButton => 'Reprendre le quiz';
 
   @override
+  String get discardQuizButton => 'Abandonner le quiz';
+
+  @override
+  String get discardQuizDialogTitle => 'Abandonner ce quiz ?';
+
+  @override
+  String get discardQuizDialogMessage =>
+      'Ta progression sauvegardée sera supprimée.';
+
+  @override
+  String get discardQuizConfirmButton => 'Abandonner';
+
+  @override
+  String get cancelButton => 'Annuler';
+
+  @override
   String questionProgress(int current, int total) {
     return 'Question $current sur $total';
   }

@@ -166,6 +166,36 @@ abstract class AppLocalizations {
   /// **'Reprendre le quiz'**
   String get resumeQuizButton;
 
+  /// No description provided for @discardQuizButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Abandonner le quiz'**
+  String get discardQuizButton;
+
+  /// No description provided for @discardQuizDialogTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Abandonner ce quiz ?'**
+  String get discardQuizDialogTitle;
+
+  /// No description provided for @discardQuizDialogMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ta progression sauvegardée sera supprimée.'**
+  String get discardQuizDialogMessage;
+
+  /// No description provided for @discardQuizConfirmButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Abandonner'**
+  String get discardQuizConfirmButton;
+
+  /// No description provided for @cancelButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annuler'**
+  String get cancelButton;
+
   /// No description provided for @questionProgress.
   ///
   /// In fr, this message translates to:
