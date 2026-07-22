@@ -10,6 +10,7 @@ import '../features/quiz/application/update_best_score.dart';
 import '../features/quiz/domain/best_score_repository.dart';
 import '../features/quiz/domain/question_repository.dart';
 import '../features/quiz/domain/paused_quiz_session_repository.dart';
+import '../features/quiz/domain/question_learning_progress_repository.dart';
 import '../features/quiz/domain/quiz_question_selector.dart';
 import '../features/quiz/domain/quiz_session_timer.dart';
 import '../features/quiz/infrastructure/bundled_question_repository.dart';
@@ -30,6 +31,7 @@ final class RecQuizApp extends StatelessWidget {
     this.quizFeedbackPlayer = const MethodChannelQuizFeedbackPlayer(),
     this.quizSessionTimer,
     this.pausedQuizSessionRepository,
+    this.learningProgressRepository,
   });
 
   final BestScoreRepository bestScoreRepository;
@@ -39,6 +41,7 @@ final class RecQuizApp extends StatelessWidget {
   final QuizFeedbackPlayer quizFeedbackPlayer;
   final QuizSessionTimer? quizSessionTimer;
   final PausedQuizSessionRepository? pausedQuizSessionRepository;
+  final QuestionLearningProgressRepository? learningProgressRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -65,11 +68,13 @@ final class RecQuizApp extends StatelessWidget {
                 repository: repository,
                 selector: const QuizQuestionSelector(),
                 seedGenerator: generateSeed,
+                learningProgressRepository: learningProgressRepository,
               ),
               LoadBestScore(bestScoreRepository),
               UpdateBestScore(bestScoreRepository),
               sessionTimer: sessionTimer,
               pausedSessionRepository: pausedQuizSessionRepository,
+              learningProgressRepository: learningProgressRepository,
             )..add(const QuizInitialized()),
           ),
         ],

@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'question.dart';
+import 'question_learning_progress.dart';
 
 final class QuizQuestionSelector {
   const QuizQuestionSelector();
@@ -9,6 +10,7 @@ final class QuizQuestionSelector {
     required List<Question> questions,
     required int count,
     required int seed,
+    Map<String, QuestionLearningProgress> progressByQuestionId = const {},
   }) {
     if (count < 1) {
       throw ArgumentError.value(count, 'count', 'The count must be positive.');
@@ -20,7 +22,12 @@ final class QuizQuestionSelector {
     }
 
     final random = Random(seed);
-    final questionPool = List<Question>.of(questions)..shuffle(random);
+    final questionPool = List<Question>.of(questions)
+      ..shuffle(random)
+      ..sort(
+        (left, right) => (progressByQuestionId[right.id]?.priority ?? 0)
+            .compareTo(progressByQuestionId[left.id]?.priority ?? 0),
+      );
     final selected = questionPool.take(count).map((question) {
       final shuffledOptions = List<QuestionOption>.of(question.options)
         ..shuffle(random);

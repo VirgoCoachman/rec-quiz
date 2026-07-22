@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../domain/question.dart';
 import '../domain/question_attempt.dart';
+import '../domain/question_learning_progress.dart';
+import '../domain/question_learning_progress_repository.dart';
 import '../domain/mistakes_review_selector.dart';
 import '../domain/paused_quiz_session.dart';
 import '../domain/paused_quiz_session_repository.dart';
@@ -146,11 +148,13 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     this._updateBestScore, {
     required QuizSessionTimer sessionTimer,
     PausedQuizSessionRepository? pausedSessionRepository,
+    QuestionLearningProgressRepository? learningProgressRepository,
     MistakesReviewSelector mistakesReviewSelector =
         const MistakesReviewSelector(),
   }) : _sessionTimer = sessionTimer,
        _mistakesReviewSelector = mistakesReviewSelector,
        _pausedSessionRepository = pausedSessionRepository,
+       _learningProgressRepository = learningProgressRepository,
        super(const QuizInitial(bestScore: 0)) {
     on<QuizInitialized>(_initialize);
     on<QuizLengthSelected>(_selectLength);
@@ -170,6 +174,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
   final QuizSessionTimer _sessionTimer;
   final MistakesReviewSelector _mistakesReviewSelector;
   final PausedQuizSessionRepository? _pausedSessionRepository;
+  final QuestionLearningProgressRepository? _learningProgressRepository;
 
   Future<void> _initialize(
     QuizInitialized event,
@@ -262,7 +267,10 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     );
   }
 
-  void _submitAnswer(QuizAnswerSubmitted event, Emitter<QuizState> emit) {
+  Future<void> _submitAnswer(
+    QuizAnswerSubmitted event,
+    Emitter<QuizState> emit,
+  ) async {
     final currentState = state;
     if (currentState is! QuizQuestionReady || currentState.hasAnswered) {
       return;
@@ -288,6 +296,20 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
         completedDuration: completedDuration,
       ),
     );
+    try {
+      final existing = await _learningProgressRepository?.loadAll();
+      final progress =
+          existing?[currentState.question.id] ??
+          QuestionLearningProgress(questionId: currentState.question.id);
+      await _learningProgressRepository?.save(
+        progress.recordAnswer(
+          isCorrect: attempt.isCorrect,
+          answeredAt: DateTime.now().toUtc(),
+        ),
+      );
+    } on Object catch (error, stackTrace) {
+      addError(error, stackTrace);
+    }
   }
 
   Future<void> _pauseSession(

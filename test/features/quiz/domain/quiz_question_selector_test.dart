@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rec_quiz/features/quiz/domain/question.dart';
 import 'package:rec_quiz/features/quiz/domain/quiz_question_selector.dart';
+import 'package:rec_quiz/features/quiz/domain/question_learning_progress.dart';
 
 import '../quiz_test_data.dart';
 
@@ -58,6 +59,24 @@ void main() {
       throwsStateError,
     );
     expect(questions.map((question) => question.id), originalIds);
+  });
+
+  test('prioritizes previously incorrect questions', () {
+    final questions = buildQuizQuestions(count: 5);
+
+    final selected = selector.select(
+      questions: questions,
+      count: 1,
+      seed: 42,
+      progressByQuestionId: {
+        questions.last.id: const QuestionLearningProgress(
+          questionId: 'question-5',
+          incorrectAnswers: 2,
+        ),
+      },
+    );
+
+    expect(selected.single.id, questions.last.id);
   });
 }
 

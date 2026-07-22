@@ -1,4 +1,5 @@
 import '../domain/question.dart';
+import '../domain/question_learning_progress_repository.dart';
 import '../domain/question_repository.dart';
 import '../domain/quiz_question_selector.dart';
 import '../domain/quick_quiz_length.dart';
@@ -10,20 +11,26 @@ final class StartQuizSession {
     required QuestionRepository repository,
     required QuizQuestionSelector selector,
     required SeedGenerator seedGenerator,
+    QuestionLearningProgressRepository? learningProgressRepository,
   }) : _repository = repository,
        _selector = selector,
-       _seedGenerator = seedGenerator;
+       _seedGenerator = seedGenerator,
+       _learningProgressRepository = learningProgressRepository;
 
   final QuestionRepository _repository;
   final QuizQuestionSelector _selector;
   final SeedGenerator _seedGenerator;
+  final QuestionLearningProgressRepository? _learningProgressRepository;
 
   Future<List<Question>> call(QuickQuizLength length) async {
     final questions = await _repository.loadActiveQuestions();
+    final progressByQuestionId =
+        await _learningProgressRepository?.loadAll() ?? const {};
     return _selector.select(
       questions: questions,
       count: length.questionCount,
       seed: _seedGenerator(),
+      progressByQuestionId: progressByQuestionId,
     );
   }
 }
