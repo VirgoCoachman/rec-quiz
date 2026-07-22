@@ -7,17 +7,20 @@ import 'package:rec_quiz/features/quiz/domain/question.dart';
 import 'package:rec_quiz/features/quiz/domain/question_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/quiz_question_selector.dart';
 import 'package:rec_quiz/features/quiz/domain/quiz_session_timer.dart';
+import 'package:rec_quiz/features/quiz/domain/quick_quiz_length.dart';
 import 'package:rec_quiz/features/settings/domain/sound_settings_repository.dart';
 
 import '../quiz_test_data.dart';
 
 void main() {
-  final questions = buildQuizQuestions();
+  final questions = buildQuizQuestions(count: 20);
 
   testWidgets('completes the accessible ten-question quiz', (tester) async {
     final semantics = tester.ensureSemantics();
     final seeds = _SeedSequence([42, 99]);
-    final bestScoreRepository = _MemoryBestScoreRepository(7);
+    final bestScoreRepository = _MemoryBestScoreRepository({
+      QuickQuizLength.ten: 7,
+    });
     final soundRepository = _MemorySoundSettingsRepository(true);
     final feedbackPlayer = _RecordingQuizFeedbackPlayer();
     final sessionTimer = _FakeQuizSessionTimer(
@@ -47,6 +50,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Quiz REC'), findsOneWidget);
+    expect(find.text('Nombre de questions'), findsOneWidget);
+    expect(find.bySemanticsLabel('Quiz de 5 questions'), findsOneWidget);
+    expect(find.bySemanticsLabel('Quiz de 10 questions'), findsOneWidget);
+    expect(find.bySemanticsLabel('Quiz de 20 questions'), findsOneWidget);
     expect(find.text('Meilleur score : 7/10'), findsOneWidget);
     expect(find.bySemanticsLabel('Désactiver le son'), findsOneWidget);
     await tester.tap(find.text('Commencer'));
@@ -127,13 +134,87 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('completes and restarts a selected five-question quiz', (
+    tester,
+  ) async {
+    final ordered = const QuizQuestionSelector().select(
+      questions: questions,
+      count: 5,
+      seed: 42,
+    );
+
+    await tester.pumpWidget(
+      RecQuizApp(
+        questionRepository: _FakeQuestionRepository(questions),
+        bestScoreRepository: _MemoryBestScoreRepository({
+          QuickQuizLength.five: 3,
+        }),
+        soundSettingsRepository: _MemorySoundSettingsRepository(false),
+        quizFeedbackPlayer: _RecordingQuizFeedbackPlayer(),
+        quizSessionTimer: _FakeQuizSessionTimer(const Duration(seconds: 35)),
+        seedGenerator: () => 42,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('Quiz de 5 questions'));
+    await tester.pumpAndSettle();
+    expect(find.text('Meilleur score : 3/5'), findsOneWidget);
+
+    await tester.tap(find.text('Commencer'));
+    await tester.pumpAndSettle();
+    for (var index = 0; index < ordered.length; index++) {
+      await tester.tap(find.text(ordered[index].correctOption.label));
+      await tester.pumpAndSettle();
+      final action = find.text(
+        index == ordered.length - 1 ? 'Voir mon résultat' : 'Question suivante',
+      );
+      await tester.ensureVisible(action);
+      await tester.tap(action);
+      await tester.pumpAndSettle();
+    }
+
+    expect(find.text('Votre score : 5/5'), findsOneWidget);
+    expect(find.text('Meilleur score : 5/5'), findsOneWidget);
+    expect(find.text('réponse correcte'), findsNWidgets(5));
+
+    final restart = find.text('Recommencer');
+    await tester.ensureVisible(restart);
+    await tester.tap(restart);
+    await tester.pumpAndSettle();
+    expect(find.text('Question 1 sur 5'), findsOneWidget);
+  });
+
+  testWidgets('starts a selected twenty-question quiz', (tester) async {
+    await tester.pumpWidget(
+      RecQuizApp(
+        questionRepository: _FakeQuestionRepository(questions),
+        bestScoreRepository: _MemoryBestScoreRepository({
+          QuickQuizLength.twenty: 18,
+        }),
+        soundSettingsRepository: _MemorySoundSettingsRepository(false),
+        quizFeedbackPlayer: _RecordingQuizFeedbackPlayer(),
+        seedGenerator: () => 42,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('Quiz de 20 questions'));
+    await tester.pumpAndSettle();
+    expect(find.text('Meilleur score : 18/20'), findsOneWidget);
+
+    await tester.tap(find.text('Commencer'));
+    await tester.pumpAndSettle();
+    expect(find.text('Question 1 sur 20'), findsOneWidget);
+  });
+
   testWidgets('offers a retry when bundled content cannot be loaded', (
     tester,
   ) async {
     await tester.pumpWidget(
       RecQuizApp(
         questionRepository: _FailingQuestionRepository(),
-        bestScoreRepository: _MemoryBestScoreRepository(0),
+        bestScoreRepository: _MemoryBestScoreRepository({}),
         soundSettingsRepository: _MemorySoundSettingsRepository(true),
         quizFeedbackPlayer: _RecordingQuizFeedbackPlayer(),
         seedGenerator: () => 42,
@@ -164,7 +245,7 @@ void main() {
     await tester.pumpWidget(
       RecQuizApp(
         questionRepository: _FakeQuestionRepository(questions),
-        bestScoreRepository: _MemoryBestScoreRepository(0),
+        bestScoreRepository: _MemoryBestScoreRepository({}),
         soundSettingsRepository: _MemorySoundSettingsRepository(true),
         quizFeedbackPlayer: feedbackPlayer,
         seedGenerator: () => 42,
@@ -205,7 +286,7 @@ void main() {
     await tester.pumpWidget(
       RecQuizApp(
         questionRepository: _FakeQuestionRepository(questions),
-        bestScoreRepository: _MemoryBestScoreRepository(0),
+        bestScoreRepository: _MemoryBestScoreRepository({}),
         soundSettingsRepository: soundRepository,
         quizFeedbackPlayer: feedbackPlayer,
         seedGenerator: () => 42,
@@ -230,7 +311,7 @@ void main() {
     await tester.pumpWidget(
       RecQuizApp(
         questionRepository: _FakeQuestionRepository(questions),
-        bestScoreRepository: _MemoryBestScoreRepository(0),
+        bestScoreRepository: _MemoryBestScoreRepository({}),
         soundSettingsRepository: soundRepository,
         quizFeedbackPlayer: feedbackPlayer,
         seedGenerator: () => 42,
@@ -255,7 +336,7 @@ void main() {
     await tester.pumpWidget(
       RecQuizApp(
         questionRepository: _FakeQuestionRepository(questions),
-        bestScoreRepository: _MemoryBestScoreRepository(0),
+        bestScoreRepository: _MemoryBestScoreRepository({}),
         soundSettingsRepository: _MemorySoundSettingsRepository(true),
         quizFeedbackPlayer: _FailingQuizFeedbackPlayer(),
         seedGenerator: () => 42,
@@ -288,7 +369,7 @@ void main() {
     await tester.pumpWidget(
       RecQuizApp(
         questionRepository: _FakeQuestionRepository(questions),
-        bestScoreRepository: _MemoryBestScoreRepository(0),
+        bestScoreRepository: _MemoryBestScoreRepository({}),
         soundSettingsRepository: _MemorySoundSettingsRepository(false),
         quizFeedbackPlayer: _RecordingQuizFeedbackPlayer(),
         seedGenerator: () => 42,
@@ -344,16 +425,17 @@ final class _FailingQuestionRepository implements QuestionRepository {
 }
 
 final class _MemoryBestScoreRepository implements BestScoreRepository {
-  _MemoryBestScoreRepository(this.score);
+  _MemoryBestScoreRepository(this.scores);
 
-  int score;
-
-  @override
-  Future<int> loadBestScore() async => score;
+  final Map<QuickQuizLength, int> scores;
 
   @override
-  Future<void> saveBestScore(int score) async {
-    this.score = score;
+  Future<int> loadBestScore(QuickQuizLength length) async =>
+      scores[length] ?? 0;
+
+  @override
+  Future<void> saveBestScore(QuickQuizLength length, int score) async {
+    scores[length] = score;
   }
 }
 

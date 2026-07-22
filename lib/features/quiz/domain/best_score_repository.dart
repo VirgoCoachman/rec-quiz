@@ -1,5 +1,7 @@
-abstract interface class BestScoreRepository {
-  Future<int> loadBestScore();
+import 'quick_quiz_length.dart';
 
-  Future<void> saveBestScore(int score);
+abstract interface class BestScoreRepository {
+  Future<int> loadBestScore(QuickQuizLength length);
+
+  Future<void> saveBestScore(QuickQuizLength length, int score);
 }

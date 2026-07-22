@@ -112,6 +112,24 @@ abstract class AppLocalizations {
   /// **'Commencer'**
   String get startButton;
 
+  /// No description provided for @quizLengthHeading.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nombre de questions'**
+  String get quizLengthHeading;
+
+  /// No description provided for @quizLengthOption.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count} questions'**
+  String quizLengthOption(int count);
+
+  /// No description provided for @quizLengthSemantics.
+  ///
+  /// In fr, this message translates to:
+  /// **'Quiz de {count} questions'**
+  String quizLengthSemantics(int count);
+
   /// No description provided for @enableSoundButton.
   ///
   /// In fr, this message translates to:

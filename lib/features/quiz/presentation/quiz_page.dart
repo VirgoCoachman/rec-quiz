@@ -5,6 +5,7 @@ import '../../../l10n/app_localizations.dart';
 import '../application/quiz_bloc.dart';
 import '../domain/question.dart';
 import '../domain/question_attempt.dart';
+import '../domain/quick_quiz_length.dart';
 import '../../settings/application/sound_settings_cubit.dart';
 
 final class QuizPage extends StatelessWidget {
@@ -52,10 +53,7 @@ final class QuizPage extends StatelessWidget {
         child: BlocBuilder<QuizBloc, QuizState>(
           builder: (context, state) {
             return switch (state) {
-              QuizInitial() => _WelcomeView(
-                strings: strings,
-                bestScore: state.bestScore,
-              ),
+              QuizInitial() => _WelcomeView(strings: strings, state: state),
               QuizLoading() => const Center(child: CircularProgressIndicator()),
               QuizQuestionReady() => _QuestionView(
                 state: state,
@@ -72,10 +70,10 @@ final class QuizPage extends StatelessWidget {
 }
 
 final class _WelcomeView extends StatelessWidget {
-  const _WelcomeView({required this.strings, required this.bestScore});
+  const _WelcomeView({required this.strings, required this.state});
 
   final AppLocalizations strings;
-  final int bestScore;
+  final QuizInitial state;
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +98,41 @@ final class _WelcomeView extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                strings.bestScore(bestScore, 10),
+                strings.quizLengthHeading,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  for (final length in QuickQuizLength.values)
+                    Semantics(
+                      label: strings.quizLengthSemantics(length.questionCount),
+                      button: true,
+                      selected: state.length == length,
+                      child: ExcludeSemantics(
+                        child: ChoiceChip(
+                          label: Text(
+                            strings.quizLengthOption(length.questionCount),
+                          ),
+                          selected: state.length == length,
+                          onSelected: (isSelected) {
+                            if (isSelected) {
+                              context.read<QuizBloc>().add(
+                                QuizLengthSelected(length),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                strings.bestScore(state.bestScore, state.length.questionCount),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 32),

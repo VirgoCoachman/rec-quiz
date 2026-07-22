@@ -9,6 +9,7 @@ import 'package:rec_quiz/features/quiz/domain/question.dart';
 import 'package:rec_quiz/features/quiz/domain/question_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/quiz_question_selector.dart';
 import 'package:rec_quiz/features/quiz/domain/quiz_session_timer.dart';
+import 'package:rec_quiz/features/quiz/domain/quick_quiz_length.dart';
 
 import '../quiz_test_data.dart';
 
@@ -21,7 +22,7 @@ void main() {
   late _FakeQuizSessionTimer sessionTimer;
 
   setUp(() {
-    questions = buildQuizQuestions();
+    questions = buildQuizQuestions(count: 20);
     questionRepository = _FakeQuestionRepository(questions);
     startQuizSession = StartQuizSession(
       repository: questionRepository,
@@ -33,7 +34,7 @@ void main() {
       count: 10,
       seed: 42,
     );
-    bestScoreRepository = _MemoryBestScoreRepository(0);
+    bestScoreRepository = _MemoryBestScoreRepository({});
     sessionTimer = _FakeQuizSessionTimer(const [
       Duration(minutes: 1, seconds: 23),
       Duration(seconds: 17),
@@ -43,12 +44,28 @@ void main() {
   blocTest<QuizBloc, QuizState>(
     'loads the persisted best score during initialization',
     build: () {
-      bestScoreRepository.score = 7;
+      bestScoreRepository.scores[QuickQuizLength.ten] = 7;
       return _buildBloc(startQuizSession, bestScoreRepository, sessionTimer);
     },
     act: (bloc) => bloc.add(const QuizInitialized()),
     expect: () => [
       isA<QuizInitial>().having((state) => state.bestScore, 'best score', 7),
+    ],
+  );
+
+  blocTest<QuizBloc, QuizState>(
+    'loads the best score for the selected quiz length',
+    setUp: () {
+      bestScoreRepository.scores[QuickQuizLength.five] = 4;
+    },
+    build: () =>
+        _buildBloc(startQuizSession, bestScoreRepository, sessionTimer),
+    seed: () => const QuizInitial(bestScore: 7),
+    act: (bloc) => bloc.add(const QuizLengthSelected(QuickQuizLength.five)),
+    expect: () => [
+      isA<QuizInitial>()
+          .having((state) => state.length, 'length', QuickQuizLength.five)
+          .having((state) => state.bestScore, 'best score', 4),
     ],
   );
 
@@ -68,7 +85,27 @@ void main() {
           )
           .having((state) => state.currentNumber, 'current number', 1)
           .having((state) => state.totalQuestions, 'total', 10)
+          .having((state) => state.length, 'length', QuickQuizLength.ten)
           .having((state) => state.bestScore, 'best score', 6),
+    ],
+  );
+
+  blocTest<QuizBloc, QuizState>(
+    'loads a five-question session after selection',
+    build: () =>
+        _buildBloc(startQuizSession, bestScoreRepository, sessionTimer),
+    seed: () => const QuizInitial(bestScore: 4, length: QuickQuizLength.five),
+    act: (bloc) => bloc.add(const QuizStarted()),
+    expect: () => [
+      isA<QuizLoading>().having(
+        (state) => state.length,
+        'length',
+        QuickQuizLength.five,
+      ),
+      isA<QuizQuestionReady>()
+          .having((state) => state.totalQuestions, 'total', 5)
+          .having((state) => state.length, 'length', QuickQuizLength.five)
+          .having((state) => state.bestScore, 'best score', 4),
     ],
   );
 
@@ -157,7 +194,7 @@ void main() {
         () => completed.attempts.add(completed.attempts.first),
         throwsUnsupportedError,
       );
-      expect(bestScoreRepository.savedScores, [10]);
+      expect(bestScoreRepository.savedScores, [(QuickQuizLength.ten, 10)]);
       expect(sessionTimer.startCount, 1);
       expect(sessionTimer.stopCount, 1);
     },
@@ -197,13 +234,20 @@ void main() {
       seedGenerator: seeds.next,
     );
 
-    final first = await useCase();
-    final second = await useCase();
+    final first = await useCase(QuickQuizLength.ten);
+    final second = await useCase(QuickQuizLength.ten);
 
     expect(
       first.map((question) => question.id),
       isNot(second.map((question) => question.id)),
     );
+  });
+
+  test('starts a twenty-question session', () async {
+    final session = await startQuizSession(QuickQuizLength.twenty);
+
+    expect(session, hasLength(20));
+    expect(session.map((question) => question.id).toSet(), hasLength(20));
   });
 
   blocTest<QuizBloc, QuizState>(
@@ -227,7 +271,7 @@ void main() {
     'still shows the current result when saving the best score fails',
     build: () => _buildBloc(
       startQuizSession,
-      _FailingSaveBestScoreRepository(5),
+      _FailingSaveBestScoreRepository({QuickQuizLength.ten: 5}),
       sessionTimer,
     ),
     seed: () => const QuizInitial(bestScore: 5),
@@ -252,16 +296,20 @@ void main() {
       sessionTimer,
     );
     addTearDown(bloc.close);
+    bloc.add(const QuizLengthSelected(QuickQuizLength.five));
+    await Future<void>.delayed(Duration.zero);
     bloc.add(const QuizStarted());
     await Future<void>.delayed(Duration.zero);
     await _completePerfectSession(bloc);
-    expect((bloc.state as QuizCompleted).attempts, hasLength(10));
+    expect((bloc.state as QuizCompleted).attempts, hasLength(5));
 
     bloc.add(const QuizRestarted());
     await Future<void>.delayed(Duration.zero);
 
     final restarted = bloc.state as QuizQuestionReady;
     expect(restarted.currentNumber, 1);
+    expect(restarted.totalQuestions, 5);
+    expect(restarted.length, QuickQuizLength.five);
     expect(restarted.attempts, isEmpty);
     expect(sessionTimer.startCount, 2);
     expect(sessionTimer.stopCount, 1);
@@ -282,7 +330,8 @@ QuizBloc _buildBloc(
 }
 
 Future<void> _completePerfectSession(QuizBloc bloc) async {
-  for (var index = 0; index < 10; index++) {
+  final totalQuestions = (bloc.state as QuizQuestionReady).totalQuestions;
+  for (var index = 0; index < totalQuestions; index++) {
     final ready = bloc.state as QuizQuestionReady;
     bloc.add(QuizAnswerSubmitted(ready.question.correctOptionId));
     await Future<void>.delayed(Duration.zero);
@@ -308,26 +357,27 @@ final class _FailingQuestionRepository implements QuestionRepository {
 }
 
 class _MemoryBestScoreRepository implements BestScoreRepository {
-  _MemoryBestScoreRepository(this.score);
+  _MemoryBestScoreRepository(this.scores);
 
-  int score;
-  final savedScores = <int>[];
-
-  @override
-  Future<int> loadBestScore() async => score;
+  final Map<QuickQuizLength, int> scores;
+  final savedScores = <(QuickQuizLength, int)>[];
 
   @override
-  Future<void> saveBestScore(int score) async {
-    this.score = score;
-    savedScores.add(score);
+  Future<int> loadBestScore(QuickQuizLength length) async =>
+      scores[length] ?? 0;
+
+  @override
+  Future<void> saveBestScore(QuickQuizLength length, int score) async {
+    scores[length] = score;
+    savedScores.add((length, score));
   }
 }
 
 final class _FailingSaveBestScoreRepository extends _MemoryBestScoreRepository {
-  _FailingSaveBestScoreRepository(super.score);
+  _FailingSaveBestScoreRepository(super.scores);
 
   @override
-  Future<void> saveBestScore(int score) {
+  Future<void> saveBestScore(QuickQuizLength length, int score) {
     throw StateError('Storage unavailable');
   }
 }

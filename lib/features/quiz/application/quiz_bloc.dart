@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../domain/question.dart';
 import '../domain/question_attempt.dart';
 import '../domain/quiz_session_timer.dart';
+import '../domain/quick_quiz_length.dart';
 import 'load_best_score.dart';
 import 'start_quiz_session.dart';
 import 'update_best_score.dart';
@@ -17,6 +18,12 @@ final class QuizInitialized extends QuizEvent {
 
 final class QuizStarted extends QuizEvent {
   const QuizStarted();
+}
+
+final class QuizLengthSelected extends QuizEvent {
+  const QuizLengthSelected(this.length);
+
+  final QuickQuizLength length;
 }
 
 final class QuizAnswerSubmitted extends QuizEvent {
@@ -34,17 +41,21 @@ final class QuizRestarted extends QuizEvent {
 }
 
 sealed class QuizState {
-  const QuizState({required this.bestScore});
+  const QuizState({required this.bestScore, required this.length});
 
   final int bestScore;
+  final QuickQuizLength length;
 }
 
 final class QuizInitial extends QuizState {
-  const QuizInitial({required super.bestScore});
+  const QuizInitial({
+    required super.bestScore,
+    super.length = QuickQuizLength.ten,
+  });
 }
 
 final class QuizLoading extends QuizState {
-  const QuizLoading({required super.bestScore});
+  const QuizLoading({required super.bestScore, required super.length});
 }
 
 final class QuizQuestionReady extends QuizState {
@@ -53,6 +64,7 @@ final class QuizQuestionReady extends QuizState {
     required this.currentIndex,
     required this.score,
     required super.bestScore,
+    required super.length,
     List<QuestionAttempt> attempts = const [],
     this.currentAttempt,
     this.completedDuration,
@@ -80,6 +92,7 @@ final class QuizCompleted extends QuizState {
     required this.totalQuestions,
     required this.duration,
     required super.bestScore,
+    required super.length,
     required List<QuestionAttempt> attempts,
   }) : attempts = List.unmodifiable(attempts);
 
@@ -90,7 +103,7 @@ final class QuizCompleted extends QuizState {
 }
 
 final class QuizFailure extends QuizState {
-  const QuizFailure({required super.bestScore});
+  const QuizFailure({required super.bestScore, required super.length});
 }
 
 final class QuizBloc extends Bloc<QuizEvent, QuizState> {
@@ -102,6 +115,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
   }) : _sessionTimer = sessionTimer,
        super(const QuizInitial(bestScore: 0)) {
     on<QuizInitialized>(_initialize);
+    on<QuizLengthSelected>(_selectLength);
     on<QuizStarted>(_loadSession);
     on<QuizRestarted>(_loadSession);
     on<QuizAnswerSubmitted>(_submitAnswer);
@@ -118,7 +132,30 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     Emitter<QuizState> emit,
   ) async {
     try {
-      emit(QuizInitial(bestScore: await _loadBestScore()));
+      final length = state.length;
+      emit(
+        QuizInitial(bestScore: await _loadBestScore(length), length: length),
+      );
+    } on Object catch (error, stackTrace) {
+      addError(error, stackTrace);
+    }
+  }
+
+  Future<void> _selectLength(
+    QuizLengthSelected event,
+    Emitter<QuizState> emit,
+  ) async {
+    if (state is! QuizInitial) {
+      return;
+    }
+
+    try {
+      emit(
+        QuizInitial(
+          bestScore: await _loadBestScore(event.length),
+          length: event.length,
+        ),
+      );
     } on Object catch (error, stackTrace) {
       addError(error, stackTrace);
     }
@@ -126,9 +163,10 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
 
   Future<void> _loadSession(QuizEvent event, Emitter<QuizState> emit) async {
     final bestScore = state.bestScore;
-    emit(QuizLoading(bestScore: bestScore));
+    final length = state.length;
+    emit(QuizLoading(bestScore: bestScore, length: length));
     try {
-      final questions = await _startQuizSession();
+      final questions = await _startQuizSession(length);
       _sessionTimer.start();
       emit(
         QuizQuestionReady(
@@ -136,11 +174,12 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
           currentIndex: 0,
           score: 0,
           bestScore: bestScore,
+          length: length,
         ),
       );
     } on Object catch (error, stackTrace) {
       addError(error, stackTrace);
-      emit(QuizFailure(bestScore: bestScore));
+      emit(QuizFailure(bestScore: bestScore, length: length));
     }
   }
 
@@ -163,6 +202,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
         currentIndex: currentState.currentIndex,
         score: currentState.score + attempt.score,
         bestScore: currentState.bestScore,
+        length: currentState.length,
         attempts: [...currentState.attempts, attempt],
         currentAttempt: attempt,
         completedDuration: completedDuration,
@@ -187,6 +227,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
       var bestScore = currentState.bestScore;
       try {
         bestScore = await _updateBestScore(
+          length: currentState.length,
           candidate: currentState.score,
           currentBest: bestScore,
         );
@@ -199,6 +240,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
           totalQuestions: currentState.totalQuestions,
           duration: duration,
           bestScore: bestScore,
+          length: currentState.length,
           attempts: currentState.attempts,
         ),
       );
@@ -211,6 +253,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
         currentIndex: currentState.currentIndex + 1,
         score: currentState.score,
         bestScore: currentState.bestScore,
+        length: currentState.length,
         attempts: currentState.attempts,
       ),
     );

@@ -19,6 +19,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get startButton => 'Commencer';
 
   @override
+  String get quizLengthHeading => 'Nombre de questions';
+
+  @override
+  String quizLengthOption(int count) {
+    return '$count questions';
+  }
+
+  @override
+  String quizLengthSemantics(int count) {
+    return 'Quiz de $count questions';
+  }
+
+  @override
   String get enableSoundButton => 'Activer le son';
 
   @override
