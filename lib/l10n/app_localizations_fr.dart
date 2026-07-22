@@ -61,6 +61,30 @@ class AppLocalizationsFr extends AppLocalizations {
   String get resultHeading => 'Résultat';
 
   @override
+  String get detailedReviewHeading => 'Correction détaillée';
+
+  @override
+  String get correctAnswerStatus => 'réponse correcte';
+
+  @override
+  String get incorrectAnswerStatus => 'réponse incorrecte';
+
+  @override
+  String reviewQuestionNumber(int number) {
+    return 'Question $number';
+  }
+
+  @override
+  String attemptSemantics(int number, String status) {
+    return 'Question $number : $status';
+  }
+
+  @override
+  String selectedAnswer(String answer) {
+    return 'Votre réponse : $answer';
+  }
+
+  @override
   String score(int score, int total) {
     return 'Votre score : $score/$total';
   }

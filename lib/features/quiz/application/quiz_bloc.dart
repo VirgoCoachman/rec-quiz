@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../domain/question.dart';
+import '../domain/question_attempt.dart';
 import 'load_best_score.dart';
 import 'start_quiz_session.dart';
 import 'update_best_score.dart';
@@ -51,30 +52,36 @@ final class QuizQuestionReady extends QuizState {
     required this.currentIndex,
     required this.score,
     required super.bestScore,
-    this.evaluation,
-  }) : questions = List.unmodifiable(questions);
+    List<QuestionAttempt> attempts = const [],
+    this.currentAttempt,
+  }) : questions = List.unmodifiable(questions),
+       attempts = List.unmodifiable(attempts);
 
   final List<Question> questions;
   final int currentIndex;
   final int score;
-  final AnswerEvaluation? evaluation;
+  final List<QuestionAttempt> attempts;
+  final QuestionAttempt? currentAttempt;
 
   Question get question => questions[currentIndex];
+  AnswerEvaluation? get evaluation => currentAttempt?.evaluation;
   int get currentNumber => currentIndex + 1;
   int get totalQuestions => questions.length;
-  bool get hasAnswered => evaluation != null;
+  bool get hasAnswered => currentAttempt != null;
   bool get isLastQuestion => currentIndex == questions.length - 1;
 }
 
 final class QuizCompleted extends QuizState {
-  const QuizCompleted({
+  QuizCompleted({
     required this.score,
     required this.totalQuestions,
     required super.bestScore,
-  });
+    required List<QuestionAttempt> attempts,
+  }) : attempts = List.unmodifiable(attempts);
 
   final int score;
   final int totalQuestions;
+  final List<QuestionAttempt> attempts;
 }
 
 final class QuizFailure extends QuizState {
@@ -131,14 +138,18 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
       return;
     }
 
-    final evaluation = currentState.question.evaluateAnswer(event.optionId);
+    final attempt = QuestionAttempt.answer(
+      question: currentState.question,
+      selectedOptionId: event.optionId,
+    );
     emit(
       QuizQuestionReady(
         questions: currentState.questions,
         currentIndex: currentState.currentIndex,
-        score: currentState.score + evaluation.score,
+        score: currentState.score + attempt.score,
         bestScore: currentState.bestScore,
-        evaluation: evaluation,
+        attempts: [...currentState.attempts, attempt],
+        currentAttempt: attempt,
       ),
     );
   }
@@ -167,6 +178,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
           score: currentState.score,
           totalQuestions: currentState.totalQuestions,
           bestScore: bestScore,
+          attempts: currentState.attempts,
         ),
       );
       return;
@@ -178,6 +190,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
         currentIndex: currentState.currentIndex + 1,
         score: currentState.score,
         bestScore: currentState.bestScore,
+        attempts: currentState.attempts,
       ),
     );
   }

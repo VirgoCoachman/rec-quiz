@@ -85,6 +85,12 @@ void main() {
             (state) => state.evaluation?.selectedOptionId,
             'selected option',
             expectedOrder[0].correctOptionId,
+          )
+          .having((state) => state.attempts, 'attempts', hasLength(1))
+          .having(
+            (state) => state.attempts.single.questionId,
+            'attempted question',
+            expectedOrder[0].id,
           ),
     ],
   );
@@ -113,6 +119,7 @@ void main() {
           .having((state) => state.currentNumber, 'current number', 2)
           .having((state) => state.score, 'score', 1)
           .having((state) => state.bestScore, 'best score', 5)
+          .having((state) => state.attempts, 'attempts', hasLength(1))
           .having((state) => state.hasAnswered, 'answered', isFalse),
     ],
   );
@@ -130,6 +137,15 @@ void main() {
       expect(completed.score, 10);
       expect(completed.bestScore, 10);
       expect(completed.totalQuestions, 10);
+      expect(completed.attempts, hasLength(10));
+      expect(
+        completed.attempts.map((attempt) => attempt.questionId),
+        expectedOrder.map((question) => question.id),
+      );
+      expect(
+        () => completed.attempts.add(completed.attempts.first),
+        throwsUnsupportedError,
+      );
       expect(bestScoreRepository.savedScores, [10]);
     },
   );
@@ -183,6 +199,22 @@ void main() {
     },
     errors: () => [isA<StateError>()],
   );
+
+  test('starts a new session without attempts from the previous one', () async {
+    final bloc = _buildBloc(startQuizSession, bestScoreRepository);
+    addTearDown(bloc.close);
+    bloc.add(const QuizStarted());
+    await Future<void>.delayed(Duration.zero);
+    await _completePerfectSession(bloc);
+    expect((bloc.state as QuizCompleted).attempts, hasLength(10));
+
+    bloc.add(const QuizRestarted());
+    await Future<void>.delayed(Duration.zero);
+
+    final restarted = bloc.state as QuizQuestionReady;
+    expect(restarted.currentNumber, 1);
+    expect(restarted.attempts, isEmpty);
+  });
 }
 
 QuizBloc _buildBloc(

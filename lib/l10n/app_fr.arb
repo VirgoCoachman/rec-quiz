@@ -27,6 +27,24 @@
   "nextQuestionButton": "Question suivante",
   "showResultButton": "Voir mon résultat",
   "resultHeading": "Résultat",
+  "detailedReviewHeading": "Correction détaillée",
+  "correctAnswerStatus": "réponse correcte",
+  "incorrectAnswerStatus": "réponse incorrecte",
+  "reviewQuestionNumber": "Question {number}",
+  "@reviewQuestionNumber": {
+    "placeholders": {"number": {"type": "int"}}
+  },
+  "attemptSemantics": "Question {number} : {status}",
+  "@attemptSemantics": {
+    "placeholders": {
+      "number": {"type": "int"},
+      "status": {"type": "String"}
+    }
+  },
+  "selectedAnswer": "Votre réponse : {answer}",
+  "@selectedAnswer": {
+    "placeholders": {"answer": {"type": "String"}}
+  },
   "score": "Votre score : {score}/{total}",
   "@score": {
     "placeholders": {

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/quiz_bloc.dart';
 import '../domain/question.dart';
+import '../domain/question_attempt.dart';
 import '../../settings/application/sound_settings_cubit.dart';
 
 final class QuizPage extends StatelessWidget {
@@ -368,7 +369,21 @@ final class _ResultView extends StatelessWidget {
               strings.bestScore(state.bestScore, state.totalQuestions),
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 32),
+            Text(
+              strings.detailedReviewHeading,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 16),
+            for (var index = 0; index < state.attempts.length; index++) ...[
+              _AttemptReviewCard(
+                attempt: state.attempts[index],
+                questionNumber: index + 1,
+                strings: strings,
+              ),
+              const SizedBox(height: 12),
+            ],
+            const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: () =>
                   context.read<QuizBloc>().add(const QuizRestarted()),
@@ -376,6 +391,98 @@ final class _ResultView extends StatelessWidget {
               label: Text(strings.restartButton),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+final class _AttemptReviewCard extends StatelessWidget {
+  const _AttemptReviewCard({
+    required this.attempt,
+    required this.questionNumber,
+    required this.strings,
+  });
+
+  final QuestionAttempt attempt;
+  final int questionNumber;
+  final AppLocalizations strings;
+
+  @override
+  Widget build(BuildContext context) {
+    final isCorrect = attempt.isCorrect;
+    final status = isCorrect
+        ? strings.correctAnswerStatus
+        : strings.incorrectAnswerStatus;
+    final accent = isCorrect
+        ? const Color(0xFF1B5E20)
+        : Theme.of(context).colorScheme.error;
+
+    return Semantics(
+      container: true,
+      label: strings.attemptSemantics(questionNumber, status),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    isCorrect
+                        ? Icons.check_circle_rounded
+                        : Icons.cancel_rounded,
+                    color: accent,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          strings.reviewQuestionNumber(questionNumber),
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(
+                                color: accent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(status),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                attempt.prompt,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              Text(strings.selectedAnswer(attempt.selectedOption.label)),
+              if (!isCorrect) ...[
+                const SizedBox(height: 6),
+                Text(strings.correctAnswer(attempt.correctOption.label)),
+              ],
+              const SizedBox(height: 16),
+              Text(
+                strings.explanationHeading,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: 4),
+              Text(attempt.explanation),
+              const SizedBox(height: 12),
+              Text(
+                strings.biblicalReferenceHeading,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: 4),
+              Text(attempt.biblicalReference),
+            ],
+          ),
         ),
       ),
     );

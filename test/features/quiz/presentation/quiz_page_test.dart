@@ -75,10 +75,27 @@ void main() {
 
     expect(find.text('Votre score : 10/10'), findsOneWidget);
     expect(find.text('Meilleur score : 10/10'), findsOneWidget);
+    expect(find.text('Correction détaillée'), findsOneWidget);
+    expect(find.text('réponse correcte'), findsNWidgets(10));
+    for (var index = 0; index < firstOrder.length; index++) {
+      final reviewCard = find.bySemanticsLabel(
+        'Question ${index + 1} : réponse correcte',
+      );
+      expect(reviewCard, findsOneWidget);
+      expect(
+        find.descendant(
+          of: reviewCard,
+          matching: find.text(firstOrder[index].prompt),
+        ),
+        findsWidgets,
+      );
+    }
     expect(feedbackPlayer.correctAnswerCount, 10);
     expect(feedbackPlayer.incorrectAnswerCount, 0);
 
-    await tester.tap(find.text('Recommencer'));
+    final restartButton = find.text('Recommencer');
+    await tester.ensureVisible(restartButton);
+    await tester.tap(restartButton);
     await tester.pumpAndSettle();
 
     expect(find.text('Question 1 sur 10'), findsOneWidget);
@@ -245,6 +262,60 @@ void main() {
     expect(find.text('Bonne réponse !'), findsOneWidget);
     expect(find.text('Question suivante'), findsOneWidget);
     expect(reportedErrors, hasLength(1));
+  });
+
+  testWidgets('shows the selected and correct answers in the final review', (
+    tester,
+  ) async {
+    final ordered = const QuizQuestionSelector().select(
+      questions: questions,
+      count: 10,
+      seed: 42,
+    );
+    final first = ordered.first;
+    final incorrect = first.options.firstWhere(
+      (option) => option.id != first.correctOptionId,
+    );
+
+    await tester.pumpWidget(
+      RecQuizApp(
+        questionRepository: _FakeQuestionRepository(questions),
+        bestScoreRepository: _MemoryBestScoreRepository(0),
+        soundSettingsRepository: _MemorySoundSettingsRepository(false),
+        quizFeedbackPlayer: _RecordingQuizFeedbackPlayer(),
+        seedGenerator: () => 42,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Commencer'));
+    await tester.pumpAndSettle();
+
+    for (var index = 0; index < ordered.length; index++) {
+      final option = index == 0 ? incorrect : ordered[index].correctOption;
+      await tester.tap(find.text(option.label));
+      await tester.pumpAndSettle();
+      final action = find.text(
+        index == ordered.length - 1 ? 'Voir mon résultat' : 'Question suivante',
+      );
+      await tester.ensureVisible(action);
+      await tester.tap(action);
+      await tester.pumpAndSettle();
+    }
+
+    expect(find.text('Votre score : 9/10'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Question 1 : réponse incorrecte'),
+      findsOneWidget,
+    );
+    expect(find.text('réponse incorrecte'), findsOneWidget);
+    expect(find.text('réponse correcte'), findsNWidgets(9));
+    expect(find.text('Votre réponse : ${incorrect.label}'), findsOneWidget);
+    expect(
+      find.text('Bonne réponse : ${first.correctOption.label}'),
+      findsOneWidget,
+    );
+    expect(find.text(first.explanation), findsOneWidget);
+    expect(find.text(first.biblicalReference), findsOneWidget);
   });
 }
 

@@ -184,6 +184,42 @@ abstract class AppLocalizations {
   /// **'Résultat'**
   String get resultHeading;
 
+  /// No description provided for @detailedReviewHeading.
+  ///
+  /// In fr, this message translates to:
+  /// **'Correction détaillée'**
+  String get detailedReviewHeading;
+
+  /// No description provided for @correctAnswerStatus.
+  ///
+  /// In fr, this message translates to:
+  /// **'réponse correcte'**
+  String get correctAnswerStatus;
+
+  /// No description provided for @incorrectAnswerStatus.
+  ///
+  /// In fr, this message translates to:
+  /// **'réponse incorrecte'**
+  String get incorrectAnswerStatus;
+
+  /// No description provided for @reviewQuestionNumber.
+  ///
+  /// In fr, this message translates to:
+  /// **'Question {number}'**
+  String reviewQuestionNumber(int number);
+
+  /// No description provided for @attemptSemantics.
+  ///
+  /// In fr, this message translates to:
+  /// **'Question {number} : {status}'**
+  String attemptSemantics(int number, String status);
+
+  /// No description provided for @selectedAnswer.
+  ///
+  /// In fr, this message translates to:
+  /// **'Votre réponse : {answer}'**
+  String selectedAnswer(String answer);
+
   /// No description provided for @score.
   ///
   /// In fr, this message translates to:
