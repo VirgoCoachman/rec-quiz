@@ -30,13 +30,22 @@ final class StartQuizSession {
     final questions = await _repository.loadActiveQuestions();
     final progressByQuestionId =
         await _learningProgressRepository?.loadAll() ?? const {};
+    final fragile = questions
+        .where(
+          (question) => (progressByQuestionId[question.id]?.priority ?? 0) > 0,
+        )
+        .toList();
+    final due = fragile
+        .where(
+          (question) =>
+              progressByQuestionId[question.id]?.isDue(
+                DateTime.now().toUtc(),
+              ) ??
+              false,
+        )
+        .toList();
     final candidates = focusedOnly
-        ? questions
-              .where(
-                (question) =>
-                    (progressByQuestionId[question.id]?.priority ?? 0) > 0,
-              )
-              .toList()
+        ? (due.isNotEmpty ? due : fragile)
         : questions;
     return _selector.select(
       questions: candidates,

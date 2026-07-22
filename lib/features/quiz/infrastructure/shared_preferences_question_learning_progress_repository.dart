@@ -63,6 +63,7 @@ final class SharedPreferencesQuestionLearningProgressRepository
     'incorrectAnswers': progress.incorrectAnswers,
     'correctStreak': progress.correctStreak,
     'lastSeenAt': progress.lastSeenAt?.toIso8601String(),
+    'nextReviewAt': progress.nextReviewAt?.toIso8601String(),
   };
 
   QuestionLearningProgress _fromJson(
@@ -70,12 +71,16 @@ final class SharedPreferencesQuestionLearningProgressRepository
     Map<String, Object?> json,
   ) {
     final lastSeenAt = json['lastSeenAt'];
+    final nextReviewAt = json['nextReviewAt'];
     return QuestionLearningProgress(
       questionId: questionId,
       correctAnswers: json['correctAnswers']! as int,
       incorrectAnswers: json['incorrectAnswers']! as int,
       correctStreak: json['correctStreak']! as int,
       lastSeenAt: lastSeenAt is String ? DateTime.parse(lastSeenAt) : null,
+      nextReviewAt: nextReviewAt is String
+          ? DateTime.parse(nextReviewAt)
+          : null,
     );
   }
 }
