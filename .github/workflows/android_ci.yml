@@ -1,0 +1,80 @@
+name: Android CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Analyze, test, and build Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.9.2
+
+      - name: Restore FVM and package caches
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.pub-cache
+            ~/fvm/versions/3.35.3
+          key: ${{ runner.os }}-fvm-3.35.3-${{ hashFiles('pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-fvm-3.35.3-
+
+      - name: Install FVM and Flutter
+        run: |
+          dart pub global activate fvm 3.2.1
+          fvm install 3.35.3
+          fvm flutter --version
+
+      - name: Resolve dependencies
+        run: fvm flutter pub get
+
+      - name: Generate localizations
+        run: fvm flutter gen-l10n
+
+      - name: Check formatting
+        run: fvm dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Analyze
+        run: fvm flutter analyze
+
+      - name: Test with coverage
+        run: fvm flutter test --coverage
+
+      - name: Enforce coverage threshold
+        run: fvm dart run tool/check_coverage.dart coverage/lcov.info 65
+
+      - name: Build debug APK
+        run: fvm flutter build apk --debug
+
+      - name: Upload Android quality artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-quality-output
+          path: |
+            coverage/lcov.info
+            build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
