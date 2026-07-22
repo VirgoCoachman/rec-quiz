@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../domain/question.dart';
 import '../domain/question_attempt.dart';
+import '../domain/quiz_session_timer.dart';
 import 'load_best_score.dart';
 import 'start_quiz_session.dart';
 import 'update_best_score.dart';
@@ -54,6 +55,7 @@ final class QuizQuestionReady extends QuizState {
     required super.bestScore,
     List<QuestionAttempt> attempts = const [],
     this.currentAttempt,
+    this.completedDuration,
   }) : questions = List.unmodifiable(questions),
        attempts = List.unmodifiable(attempts);
 
@@ -62,6 +64,7 @@ final class QuizQuestionReady extends QuizState {
   final int score;
   final List<QuestionAttempt> attempts;
   final QuestionAttempt? currentAttempt;
+  final Duration? completedDuration;
 
   Question get question => questions[currentIndex];
   AnswerEvaluation? get evaluation => currentAttempt?.evaluation;
@@ -75,12 +78,14 @@ final class QuizCompleted extends QuizState {
   QuizCompleted({
     required this.score,
     required this.totalQuestions,
+    required this.duration,
     required super.bestScore,
     required List<QuestionAttempt> attempts,
   }) : attempts = List.unmodifiable(attempts);
 
   final int score;
   final int totalQuestions;
+  final Duration duration;
   final List<QuestionAttempt> attempts;
 }
 
@@ -89,8 +94,13 @@ final class QuizFailure extends QuizState {
 }
 
 final class QuizBloc extends Bloc<QuizEvent, QuizState> {
-  QuizBloc(this._startQuizSession, this._loadBestScore, this._updateBestScore)
-    : super(const QuizInitial(bestScore: 0)) {
+  QuizBloc(
+    this._startQuizSession,
+    this._loadBestScore,
+    this._updateBestScore, {
+    required QuizSessionTimer sessionTimer,
+  }) : _sessionTimer = sessionTimer,
+       super(const QuizInitial(bestScore: 0)) {
     on<QuizInitialized>(_initialize);
     on<QuizStarted>(_loadSession);
     on<QuizRestarted>(_loadSession);
@@ -101,6 +111,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
   final StartQuizSession _startQuizSession;
   final LoadBestScore _loadBestScore;
   final UpdateBestScore _updateBestScore;
+  final QuizSessionTimer _sessionTimer;
 
   Future<void> _initialize(
     QuizInitialized event,
@@ -118,6 +129,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     emit(QuizLoading(bestScore: bestScore));
     try {
       final questions = await _startQuizSession();
+      _sessionTimer.start();
       emit(
         QuizQuestionReady(
           questions: questions,
@@ -142,6 +154,9 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
       question: currentState.question,
       selectedOptionId: event.optionId,
     );
+    final completedDuration = currentState.isLastQuestion
+        ? _sessionTimer.stop()
+        : null;
     emit(
       QuizQuestionReady(
         questions: currentState.questions,
@@ -150,6 +165,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
         bestScore: currentState.bestScore,
         attempts: [...currentState.attempts, attempt],
         currentAttempt: attempt,
+        completedDuration: completedDuration,
       ),
     );
   }
@@ -164,6 +180,10 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     }
 
     if (currentState.isLastQuestion) {
+      final duration = currentState.completedDuration;
+      if (duration == null) {
+        throw StateError('A completed quiz must have a measured duration.');
+      }
       var bestScore = currentState.bestScore;
       try {
         bestScore = await _updateBestScore(
@@ -177,6 +197,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
         QuizCompleted(
           score: currentState.score,
           totalQuestions: currentState.totalQuestions,
+          duration: duration,
           bestScore: bestScore,
           attempts: currentState.attempts,
         ),

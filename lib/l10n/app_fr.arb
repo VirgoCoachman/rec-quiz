@@ -59,6 +59,13 @@
       "total": {"type": "int"}
     }
   },
+  "sessionDuration": "Durée : {minutes} min {seconds} s",
+  "@sessionDuration": {
+    "placeholders": {
+      "minutes": {"type": "int"},
+      "seconds": {"type": "int"}
+    }
+  },
   "restartButton": "Recommencer",
   "loadError": "Impossible de charger les questions.",
   "retryButton": "Réessayer"

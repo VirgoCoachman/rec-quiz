@@ -8,6 +8,7 @@ import 'package:rec_quiz/features/quiz/domain/best_score_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/question.dart';
 import 'package:rec_quiz/features/quiz/domain/question_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/quiz_question_selector.dart';
+import 'package:rec_quiz/features/quiz/domain/quiz_session_timer.dart';
 
 import '../quiz_test_data.dart';
 
@@ -17,6 +18,7 @@ void main() {
   late StartQuizSession startQuizSession;
   late List<Question> expectedOrder;
   late _MemoryBestScoreRepository bestScoreRepository;
+  late _FakeQuizSessionTimer sessionTimer;
 
   setUp(() {
     questions = buildQuizQuestions();
@@ -32,13 +34,17 @@ void main() {
       seed: 42,
     );
     bestScoreRepository = _MemoryBestScoreRepository(0);
+    sessionTimer = _FakeQuizSessionTimer(const [
+      Duration(minutes: 1, seconds: 23),
+      Duration(seconds: 17),
+    ]);
   });
 
   blocTest<QuizBloc, QuizState>(
     'loads the persisted best score during initialization',
     build: () {
       bestScoreRepository.score = 7;
-      return _buildBloc(startQuizSession, bestScoreRepository);
+      return _buildBloc(startQuizSession, bestScoreRepository, sessionTimer);
     },
     act: (bloc) => bloc.add(const QuizInitialized()),
     expect: () => [
@@ -48,7 +54,8 @@ void main() {
 
   blocTest<QuizBloc, QuizState>(
     'loads a ten-question session and carries the best score',
-    build: () => _buildBloc(startQuizSession, bestScoreRepository),
+    build: () =>
+        _buildBloc(startQuizSession, bestScoreRepository, sessionTimer),
     seed: () => const QuizInitial(bestScore: 6),
     act: (bloc) => bloc.add(const QuizStarted()),
     expect: () => [
@@ -67,7 +74,8 @@ void main() {
 
   blocTest<QuizBloc, QuizState>(
     'evaluates one answer and ignores subsequent submissions',
-    build: () => _buildBloc(startQuizSession, bestScoreRepository),
+    build: () =>
+        _buildBloc(startQuizSession, bestScoreRepository, sessionTimer),
     act: (bloc) async {
       bloc.add(const QuizStarted());
       await Future<void>.delayed(Duration.zero);
@@ -97,7 +105,8 @@ void main() {
 
   blocTest<QuizBloc, QuizState>(
     'moves to the next question and preserves scores',
-    build: () => _buildBloc(startQuizSession, bestScoreRepository),
+    build: () =>
+        _buildBloc(startQuizSession, bestScoreRepository, sessionTimer),
     seed: () => const QuizInitial(bestScore: 5),
     act: (bloc) async {
       bloc.add(const QuizStarted());
@@ -126,7 +135,8 @@ void main() {
 
   blocTest<QuizBloc, QuizState>(
     'persists a new best score when the session completes',
-    build: () => _buildBloc(startQuizSession, bestScoreRepository),
+    build: () =>
+        _buildBloc(startQuizSession, bestScoreRepository, sessionTimer),
     act: (bloc) async {
       bloc.add(const QuizStarted());
       await Future<void>.delayed(Duration.zero);
@@ -137,6 +147,7 @@ void main() {
       expect(completed.score, 10);
       expect(completed.bestScore, 10);
       expect(completed.totalQuestions, 10);
+      expect(completed.duration, const Duration(minutes: 1, seconds: 23));
       expect(completed.attempts, hasLength(10));
       expect(
         completed.attempts.map((attempt) => attempt.questionId),
@@ -147,8 +158,36 @@ void main() {
         throwsUnsupportedError,
       );
       expect(bestScoreRepository.savedScores, [10]);
+      expect(sessionTimer.startCount, 1);
+      expect(sessionTimer.stopCount, 1);
     },
   );
+
+  test('stops timing as soon as the final answer is submitted', () async {
+    final bloc = _buildBloc(
+      startQuizSession,
+      bestScoreRepository,
+      sessionTimer,
+    );
+    addTearDown(bloc.close);
+    bloc.add(const QuizStarted());
+    await Future<void>.delayed(Duration.zero);
+
+    for (var index = 0; index < 9; index++) {
+      final ready = bloc.state as QuizQuestionReady;
+      bloc.add(QuizAnswerSubmitted(ready.question.correctOptionId));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const QuizNextRequested());
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    final finalQuestion = bloc.state as QuizQuestionReady;
+    bloc.add(QuizAnswerSubmitted(finalQuestion.question.correctOptionId));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(sessionTimer.stopCount, 1);
+    expect(bloc.state, isA<QuizQuestionReady>());
+  });
 
   test('uses a fresh injected seed for every new session', () async {
     final seeds = _SeedSequence([1, 2]);
@@ -176,16 +215,21 @@ void main() {
         seedGenerator: () => 42,
       ),
       bestScoreRepository,
+      sessionTimer,
     ),
     act: (bloc) => bloc.add(const QuizStarted()),
     expect: () => [isA<QuizLoading>(), isA<QuizFailure>()],
     errors: () => [isA<FormatException>()],
+    verify: (_) => expect(sessionTimer.startCount, 0),
   );
 
   blocTest<QuizBloc, QuizState>(
     'still shows the current result when saving the best score fails',
-    build: () =>
-        _buildBloc(startQuizSession, _FailingSaveBestScoreRepository(5)),
+    build: () => _buildBloc(
+      startQuizSession,
+      _FailingSaveBestScoreRepository(5),
+      sessionTimer,
+    ),
     seed: () => const QuizInitial(bestScore: 5),
     act: (bloc) async {
       bloc.add(const QuizStarted());
@@ -196,12 +240,17 @@ void main() {
       final completed = bloc.state as QuizCompleted;
       expect(completed.score, 10);
       expect(completed.bestScore, 5);
+      expect(completed.duration, const Duration(minutes: 1, seconds: 23));
     },
     errors: () => [isA<StateError>()],
   );
 
   test('starts a new session without attempts from the previous one', () async {
-    final bloc = _buildBloc(startQuizSession, bestScoreRepository);
+    final bloc = _buildBloc(
+      startQuizSession,
+      bestScoreRepository,
+      sessionTimer,
+    );
     addTearDown(bloc.close);
     bloc.add(const QuizStarted());
     await Future<void>.delayed(Duration.zero);
@@ -214,17 +263,21 @@ void main() {
     final restarted = bloc.state as QuizQuestionReady;
     expect(restarted.currentNumber, 1);
     expect(restarted.attempts, isEmpty);
+    expect(sessionTimer.startCount, 2);
+    expect(sessionTimer.stopCount, 1);
   });
 }
 
 QuizBloc _buildBloc(
   StartQuizSession startQuizSession,
   BestScoreRepository bestScoreRepository,
+  QuizSessionTimer sessionTimer,
 ) {
   return QuizBloc(
     startQuizSession,
     LoadBestScore(bestScoreRepository),
     UpdateBestScore(bestScoreRepository),
+    sessionTimer: sessionTimer,
   );
 }
 
@@ -286,4 +339,24 @@ final class _SeedSequence {
   var _index = 0;
 
   int next() => _seeds[_index++];
+}
+
+final class _FakeQuizSessionTimer implements QuizSessionTimer {
+  _FakeQuizSessionTimer(this._durations);
+
+  final List<Duration> _durations;
+  var _durationIndex = 0;
+  var startCount = 0;
+  var stopCount = 0;
+
+  @override
+  void start() {
+    startCount++;
+  }
+
+  @override
+  Duration stop() {
+    stopCount++;
+    return _durations[_durationIndex++];
+  }
 }

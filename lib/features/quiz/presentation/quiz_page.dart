@@ -369,6 +369,14 @@ final class _ResultView extends StatelessWidget {
               strings.bestScore(state.bestScore, state.totalQuestions),
               style: Theme.of(context).textTheme.titleMedium,
             ),
+            const SizedBox(height: 8),
+            Text(
+              strings.sessionDuration(
+                state.duration.inMinutes,
+                state.duration.inSeconds.remainder(60),
+              ),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 32),
             Text(
               strings.detailedReviewHeading,

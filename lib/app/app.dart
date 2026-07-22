@@ -10,7 +10,9 @@ import '../features/quiz/application/update_best_score.dart';
 import '../features/quiz/domain/best_score_repository.dart';
 import '../features/quiz/domain/question_repository.dart';
 import '../features/quiz/domain/quiz_question_selector.dart';
+import '../features/quiz/domain/quiz_session_timer.dart';
 import '../features/quiz/infrastructure/bundled_question_repository.dart';
+import '../features/quiz/infrastructure/stopwatch_quiz_session_timer.dart';
 import '../features/quiz/presentation/quiz_page.dart';
 import '../features/quiz/presentation/quiz_feedback_listener.dart';
 import '../features/settings/application/sound_settings_cubit.dart';
@@ -25,6 +27,7 @@ final class RecQuizApp extends StatelessWidget {
     this.questionRepository,
     this.seedGenerator,
     this.quizFeedbackPlayer = const MethodChannelQuizFeedbackPlayer(),
+    this.quizSessionTimer,
   });
 
   final BestScoreRepository bestScoreRepository;
@@ -32,12 +35,14 @@ final class RecQuizApp extends StatelessWidget {
   final QuestionRepository? questionRepository;
   final SeedGenerator? seedGenerator;
   final QuizFeedbackPlayer quizFeedbackPlayer;
+  final QuizSessionTimer? quizSessionTimer;
 
   @override
   Widget build(BuildContext context) {
     final repository = questionRepository ?? BundledQuestionRepository();
     final generateSeed =
         seedGenerator ?? () => DateTime.now().microsecondsSinceEpoch;
+    final sessionTimer = quizSessionTimer ?? StopwatchQuizSessionTimer();
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -60,6 +65,7 @@ final class RecQuizApp extends StatelessWidget {
               ),
               LoadBestScore(bestScoreRepository),
               UpdateBestScore(bestScoreRepository),
+              sessionTimer: sessionTimer,
             )..add(const QuizInitialized()),
           ),
         ],

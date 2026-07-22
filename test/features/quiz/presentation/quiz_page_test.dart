@@ -6,6 +6,7 @@ import 'package:rec_quiz/features/quiz/domain/best_score_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/question.dart';
 import 'package:rec_quiz/features/quiz/domain/question_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/quiz_question_selector.dart';
+import 'package:rec_quiz/features/quiz/domain/quiz_session_timer.dart';
 import 'package:rec_quiz/features/settings/domain/sound_settings_repository.dart';
 
 import '../quiz_test_data.dart';
@@ -19,6 +20,9 @@ void main() {
     final bestScoreRepository = _MemoryBestScoreRepository(7);
     final soundRepository = _MemorySoundSettingsRepository(true);
     final feedbackPlayer = _RecordingQuizFeedbackPlayer();
+    final sessionTimer = _FakeQuizSessionTimer(
+      const Duration(minutes: 1, seconds: 23),
+    );
     final firstOrder = const QuizQuestionSelector().select(
       questions: questions,
       count: 10,
@@ -36,6 +40,7 @@ void main() {
         bestScoreRepository: bestScoreRepository,
         soundSettingsRepository: soundRepository,
         quizFeedbackPlayer: feedbackPlayer,
+        quizSessionTimer: sessionTimer,
         seedGenerator: seeds.next,
       ),
     );
@@ -75,6 +80,9 @@ void main() {
 
     expect(find.text('Votre score : 10/10'), findsOneWidget);
     expect(find.text('Meilleur score : 10/10'), findsOneWidget);
+    expect(find.text('Durée : 1 min 23 s'), findsOneWidget);
+    expect(sessionTimer.startCount, 1);
+    expect(sessionTimer.stopCount, 1);
     expect(find.text('Correction détaillée'), findsOneWidget);
     expect(find.text('réponse correcte'), findsNWidgets(10));
     for (var index = 0; index < firstOrder.length; index++) {
@@ -392,4 +400,23 @@ final class _SeedSequence {
   var _index = 0;
 
   int next() => _seeds[_index++];
+}
+
+final class _FakeQuizSessionTimer implements QuizSessionTimer {
+  _FakeQuizSessionTimer(this.elapsed);
+
+  final Duration elapsed;
+  var startCount = 0;
+  var stopCount = 0;
+
+  @override
+  void start() {
+    startCount++;
+  }
+
+  @override
+  Duration stop() {
+    stopCount++;
+    return elapsed;
+  }
 }

@@ -232,6 +232,12 @@ abstract class AppLocalizations {
   /// **'Meilleur score : {score}/{total}'**
   String bestScore(int score, int total);
 
+  /// No description provided for @sessionDuration.
+  ///
+  /// In fr, this message translates to:
+  /// **'Durée : {minutes} min {seconds} s'**
+  String sessionDuration(int minutes, int seconds);
+
   /// No description provided for @restartButton.
   ///
   /// In fr, this message translates to:

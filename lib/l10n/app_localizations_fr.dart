@@ -95,6 +95,11 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String sessionDuration(int minutes, int seconds) {
+    return 'Durée : $minutes min $seconds s';
+  }
+
+  @override
   String get restartButton => 'Recommencer';
 
   @override
