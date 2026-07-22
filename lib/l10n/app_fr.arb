@@ -14,6 +14,10 @@
   },
   "enableSoundButton": "Activer le son",
   "disableSoundButton": "Désactiver le son",
+  "pauseQuizButton": "Mettre le quiz en pause",
+  "pausedHeading": "Quiz en pause",
+  "pausedMessage": "Ta progression est conservée. Reprends quand tu es prêt.",
+  "resumeQuizButton": "Reprendre le quiz",
   "questionProgress": "Question {current} sur {total}",
   "@questionProgress": {
     "placeholders": {

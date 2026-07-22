@@ -20,6 +20,29 @@ final class QuizPage extends StatelessWidget {
       appBar: AppBar(
         title: Text(strings.appTitle),
         actions: [
+          BlocBuilder<QuizBloc, QuizState>(
+            builder: (context, state) {
+              final canPause =
+                  state is QuizQuestionReady && state.completedDuration == null;
+              if (!canPause) {
+                return const SizedBox.shrink();
+              }
+
+              return Semantics(
+                label: strings.pauseQuizButton,
+                button: true,
+                child: ExcludeSemantics(
+                  child: IconButton(
+                    onPressed: () => context.read<QuizBloc>().add(
+                      const QuizPauseRequested(),
+                    ),
+                    tooltip: strings.pauseQuizButton,
+                    icon: const Icon(Icons.pause_rounded),
+                  ),
+                ),
+              );
+            },
+          ),
           BlocBuilder<SoundSettingsCubit, SoundSettingsState>(
             builder: (context, soundState) {
               final isEnabled = soundState.isEnabled;
@@ -61,9 +84,64 @@ final class QuizPage extends StatelessWidget {
                 strings: strings,
               ),
               QuizCompleted() => _ResultView(state: state, strings: strings),
+              QuizPaused() => _PausedView(strings: strings),
               QuizFailure() => _FailureView(strings: strings),
             };
           },
+        ),
+      ),
+    );
+  }
+}
+
+final class _PausedView extends StatelessWidget {
+  const _PausedView({required this.strings});
+
+  final AppLocalizations strings;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.pause_circle_filled_rounded,
+                size: 72,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                strings.pausedHeading,
+                style: Theme.of(context).textTheme.headlineMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                strings.pausedMessage,
+                style: Theme.of(context).textTheme.bodyLarge,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 28),
+              Semantics(
+                label: strings.resumeQuizButton,
+                button: true,
+                child: ExcludeSemantics(
+                  child: FilledButton.icon(
+                    onPressed: () => context.read<QuizBloc>().add(
+                      const QuizResumeRequested(),
+                    ),
+                    icon: const Icon(Icons.play_arrow_rounded),
+                    label: Text(strings.resumeQuizButton),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

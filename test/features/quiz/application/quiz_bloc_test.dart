@@ -414,6 +414,71 @@ void main() {
     },
   );
 
+  test('pauses and resumes the exact active session', () async {
+    final bloc = _buildBloc(
+      startQuizSession,
+      bestScoreRepository,
+      sessionTimer,
+    );
+    addTearDown(bloc.close);
+    bloc.add(const QuizStarted());
+    await Future<void>.delayed(Duration.zero);
+    final active = bloc.state as QuizQuestionReady;
+
+    bloc
+      ..add(const QuizPauseRequested())
+      ..add(QuizAnswerSubmitted(active.question.correctOptionId))
+      ..add(const QuizNextRequested())
+      ..add(const QuizPauseRequested());
+    await Future<void>.delayed(Duration.zero);
+
+    final paused = bloc.state as QuizPaused;
+    expect(identical(paused.session, active), isTrue);
+    expect(paused.bestScore, active.bestScore);
+    expect(paused.length, active.length);
+    expect(sessionTimer.pauseCount, 1);
+    expect(sessionTimer.resumeCount, 0);
+
+    bloc
+      ..add(const QuizResumeRequested())
+      ..add(const QuizResumeRequested());
+    await Future<void>.delayed(Duration.zero);
+
+    expect(identical(bloc.state, active), isTrue);
+    expect(sessionTimer.pauseCount, 1);
+    expect(sessionTimer.resumeCount, 1);
+  });
+
+  test('does not pause after the final answer has stopped timing', () async {
+    final bloc = _buildBloc(
+      startQuizSession,
+      bestScoreRepository,
+      sessionTimer,
+    );
+    addTearDown(bloc.close);
+    bloc.add(const QuizStarted());
+    await Future<void>.delayed(Duration.zero);
+
+    for (var index = 0; index < 9; index++) {
+      final ready = bloc.state as QuizQuestionReady;
+      bloc.add(QuizAnswerSubmitted(ready.question.correctOptionId));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const QuizNextRequested());
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    final finalQuestion = bloc.state as QuizQuestionReady;
+    bloc.add(QuizAnswerSubmitted(finalQuestion.question.correctOptionId));
+    await Future<void>.delayed(Duration.zero);
+    final answered = bloc.state;
+    bloc.add(const QuizPauseRequested());
+    await Future<void>.delayed(Duration.zero);
+
+    expect(identical(bloc.state, answered), isTrue);
+    expect(sessionTimer.pauseCount, 0);
+    expect(sessionTimer.stopCount, 1);
+  });
+
   test('stops timing as soon as the final answer is submitted', () async {
     final bloc = _buildBloc(
       startQuizSession,
@@ -611,11 +676,23 @@ final class _FakeQuizSessionTimer implements QuizSessionTimer {
   final List<Duration> _durations;
   var _durationIndex = 0;
   var startCount = 0;
+  var pauseCount = 0;
+  var resumeCount = 0;
   var stopCount = 0;
 
   @override
   void start() {
     startCount++;
+  }
+
+  @override
+  void pause() {
+    pauseCount++;
+  }
+
+  @override
+  void resume() {
+    resumeCount++;
   }
 
   @override

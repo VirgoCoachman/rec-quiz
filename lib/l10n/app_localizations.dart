@@ -142,6 +142,30 @@ abstract class AppLocalizations {
   /// **'Désactiver le son'**
   String get disableSoundButton;
 
+  /// No description provided for @pauseQuizButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mettre le quiz en pause'**
+  String get pauseQuizButton;
+
+  /// No description provided for @pausedHeading.
+  ///
+  /// In fr, this message translates to:
+  /// **'Quiz en pause'**
+  String get pausedHeading;
+
+  /// No description provided for @pausedMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ta progression est conservée. Reprends quand tu es prêt.'**
+  String get pausedMessage;
+
+  /// No description provided for @resumeQuizButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Reprendre le quiz'**
+  String get resumeQuizButton;
+
   /// No description provided for @questionProgress.
   ///
   /// In fr, this message translates to:

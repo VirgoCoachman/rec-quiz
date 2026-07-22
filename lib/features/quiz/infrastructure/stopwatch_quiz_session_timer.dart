@@ -11,6 +11,16 @@ final class StopwatchQuizSessionTimer implements QuizSessionTimer {
   }
 
   @override
+  void pause() {
+    _stopwatch.stop();
+  }
+
+  @override
+  void resume() {
+    _stopwatch.start();
+  }
+
+  @override
   Duration stop() {
     _stopwatch.stop();
     return _stopwatch.elapsed;

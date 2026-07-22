@@ -44,6 +44,9 @@ final class QuizFeedbackListener extends StatelessWidget {
     if (current is! QuizQuestionReady || !current.hasAnswered) {
       return false;
     }
+    if (previous is QuizPaused && identical(previous.session, current)) {
+      return false;
+    }
     return previous is! QuizQuestionReady ||
         !previous.hasAnswered ||
         previous.currentIndex != current.currentIndex;

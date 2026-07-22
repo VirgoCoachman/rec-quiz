@@ -46,6 +46,14 @@ final class QuizMistakesReviewStarted extends QuizEvent {
   const QuizMistakesReviewStarted();
 }
 
+final class QuizPauseRequested extends QuizEvent {
+  const QuizPauseRequested();
+}
+
+final class QuizResumeRequested extends QuizEvent {
+  const QuizResumeRequested();
+}
+
 sealed class QuizState {
   const QuizState({required this.bestScore, required this.length});
 
@@ -114,6 +122,13 @@ final class QuizCompleted extends QuizState {
       List.unmodifiable(attempts.where((attempt) => !attempt.isCorrect));
 }
 
+final class QuizPaused extends QuizState {
+  QuizPaused({required this.session})
+    : super(bestScore: session.bestScore, length: session.length);
+
+  final QuizQuestionReady session;
+}
+
 final class QuizFailure extends QuizState {
   const QuizFailure({required super.bestScore, required super.length});
 }
@@ -134,6 +149,8 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     on<QuizStarted>(_loadSession);
     on<QuizRestarted>(_loadSession);
     on<QuizMistakesReviewStarted>(_startMistakesReview);
+    on<QuizPauseRequested>(_pauseSession);
+    on<QuizResumeRequested>(_resumeSession);
     on<QuizAnswerSubmitted>(_submitAnswer);
     on<QuizNextRequested>(_moveNext);
   }
@@ -254,6 +271,27 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
         completedDuration: completedDuration,
       ),
     );
+  }
+
+  void _pauseSession(QuizPauseRequested event, Emitter<QuizState> emit) {
+    final currentState = state;
+    if (currentState is! QuizQuestionReady ||
+        currentState.completedDuration != null) {
+      return;
+    }
+
+    _sessionTimer.pause();
+    emit(QuizPaused(session: currentState));
+  }
+
+  void _resumeSession(QuizResumeRequested event, Emitter<QuizState> emit) {
+    final currentState = state;
+    if (currentState is! QuizPaused) {
+      return;
+    }
+
+    _sessionTimer.resume();
+    emit(currentState.session);
   }
 
   Future<void> _moveNext(

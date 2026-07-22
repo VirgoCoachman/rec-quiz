@@ -38,6 +38,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get disableSoundButton => 'Désactiver le son';
 
   @override
+  String get pauseQuizButton => 'Mettre le quiz en pause';
+
+  @override
+  String get pausedHeading => 'Quiz en pause';
+
+  @override
+  String get pausedMessage =>
+      'Ta progression est conservée. Reprends quand tu es prêt.';
+
+  @override
+  String get resumeQuizButton => 'Reprendre le quiz';
+
+  @override
   String questionProgress(int current, int total) {
     return 'Question $current sur $total';
   }

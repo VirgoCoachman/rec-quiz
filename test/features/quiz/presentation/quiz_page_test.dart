@@ -579,6 +579,72 @@ void main() {
     expect(find.text('Nouveau quiz rapide'), findsOneWidget);
     semantics.dispose();
   });
+
+  testWidgets('pauses and resumes without exposing or replaying the answer', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final feedbackPlayer = _RecordingQuizFeedbackPlayer();
+    final sessionTimer = _FakeQuizSessionTimer(const Duration(seconds: 30));
+    final ordered = const QuizQuestionSelector().select(
+      questions: questions,
+      count: 10,
+      seed: 42,
+    );
+
+    await tester.pumpWidget(
+      RecQuizApp(
+        questionRepository: _FakeQuestionRepository(questions),
+        bestScoreRepository: _MemoryBestScoreRepository({}),
+        soundSettingsRepository: _MemorySoundSettingsRepository(true),
+        quizFeedbackPlayer: feedbackPlayer,
+        quizSessionTimer: sessionTimer,
+        seedGenerator: () => 42,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Commencer'));
+    await tester.pumpAndSettle();
+
+    final firstQuestion = ordered.first;
+    await tester.tap(find.text(firstQuestion.correctOption.label));
+    await tester.pumpAndSettle();
+    expect(feedbackPlayer.correctAnswerCount, 1);
+
+    final pauseButton = find.bySemanticsLabel('Mettre le quiz en pause');
+    expect(pauseButton, findsOneWidget);
+    await tester.tap(pauseButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Quiz en pause'), findsOneWidget);
+    expect(find.text(firstQuestion.prompt), findsNothing);
+    expect(find.text(firstQuestion.correctOption.label), findsNothing);
+    expect(sessionTimer.pauseCount, 1);
+
+    final resumeButton = find.bySemanticsLabel('Reprendre le quiz');
+    expect(resumeButton, findsOneWidget);
+    await tester.tap(resumeButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text(firstQuestion.prompt), findsOneWidget);
+    expect(find.text('Bonne réponse !'), findsOneWidget);
+    expect(feedbackPlayer.correctAnswerCount, 1);
+    expect(sessionTimer.resumeCount, 1);
+
+    final nextButton = find.text('Question suivante');
+    await tester.ensureVisible(nextButton);
+    await tester.tap(nextButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Mettre le quiz en pause'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Reprendre le quiz'));
+    await tester.pumpAndSettle();
+
+    expect(find.text(ordered[1].prompt), findsOneWidget);
+    expect(sessionTimer.pauseCount, 2);
+    expect(sessionTimer.resumeCount, 2);
+    semantics.dispose();
+  });
 }
 
 final class _FakeQuestionRepository implements QuestionRepository {
@@ -662,11 +728,23 @@ final class _FakeQuizSessionTimer implements QuizSessionTimer {
 
   final Duration elapsed;
   var startCount = 0;
+  var pauseCount = 0;
+  var resumeCount = 0;
   var stopCount = 0;
 
   @override
   void start() {
     startCount++;
+  }
+
+  @override
+  void pause() {
+    pauseCount++;
+  }
+
+  @override
+  void resume() {
+    resumeCount++;
   }
 
   @override
