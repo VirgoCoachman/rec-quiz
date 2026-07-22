@@ -6,6 +6,7 @@ void main() {
     expect(QuizSessionMode.values, [
       QuizSessionMode.quickQuiz,
       QuizSessionMode.mistakesReview,
+      QuizSessionMode.focusedReview,
     ]);
   });
 }

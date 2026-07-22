@@ -19,6 +19,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get startButton => 'Commencer';
 
   @override
+  String get focusedReviewButton => 'Réviser les questions à renforcer';
+
+  @override
   String get quizLengthHeading => 'Nombre de questions';
 
   @override

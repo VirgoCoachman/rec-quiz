@@ -279,6 +279,16 @@ final class _WelcomeView extends StatelessWidget {
                 icon: const Icon(Icons.play_arrow_rounded),
                 label: Text(strings.startButton),
               ),
+              if (state.hasFocusedReview) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => context.read<QuizBloc>().add(
+                    const QuizFocusedReviewStarted(),
+                  ),
+                  icon: const Icon(Icons.school_rounded),
+                  label: Text(strings.focusedReviewButton),
+                ),
+              ],
             ],
           ),
         ),

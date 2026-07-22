@@ -8,6 +8,8 @@ import 'package:rec_quiz/features/quiz/domain/best_score_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/paused_quiz_session.dart';
 import 'package:rec_quiz/features/quiz/domain/paused_quiz_session_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/question.dart';
+import 'package:rec_quiz/features/quiz/domain/question_learning_progress.dart';
+import 'package:rec_quiz/features/quiz/domain/question_learning_progress_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/question_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/quiz_question_selector.dart';
 import 'package:rec_quiz/features/quiz/domain/quiz_session_mode.dart';
@@ -142,6 +144,33 @@ void main() {
           .having((state) => state.totalQuestions, 'total', 5)
           .having((state) => state.length, 'length', QuickQuizLength.five)
           .having((state) => state.bestScore, 'best score', 4),
+    ],
+  );
+
+  blocTest<QuizBloc, QuizState>(
+    'starts a focused review without changing the quick quiz score',
+    build: () {
+      final focusedStart = StartQuizSession(
+        repository: questionRepository,
+        selector: const QuizQuestionSelector(),
+        seedGenerator: () => 42,
+        learningProgressRepository: _MemoryLearningProgressRepository({
+          questions.last.id: const QuestionLearningProgress(
+            questionId: 'question-20',
+            incorrectAnswers: 1,
+          ),
+        }),
+      );
+      return _buildBloc(focusedStart, bestScoreRepository, sessionTimer);
+    },
+    seed: () => const QuizInitial(bestScore: 6, hasFocusedReview: true),
+    act: (bloc) => bloc.add(const QuizFocusedReviewStarted()),
+    expect: () => [
+      isA<QuizLoading>(),
+      isA<QuizQuestionReady>()
+          .having((state) => state.mode, 'mode', QuizSessionMode.focusedReview)
+          .having((state) => state.question.id, 'question', 'question-20')
+          .having((state) => state.bestScore, 'best score', 6),
     ],
   );
 
@@ -673,6 +702,21 @@ final class _MemoryPausedQuizSessionRepository
   @override
   Future<void> save(PausedQuizSession value) async {
     session = value;
+  }
+}
+
+final class _MemoryLearningProgressRepository
+    implements QuestionLearningProgressRepository {
+  _MemoryLearningProgressRepository(this.values);
+
+  final Map<String, QuestionLearningProgress> values;
+
+  @override
+  Future<Map<String, QuestionLearningProgress>> loadAll() async => values;
+
+  @override
+  Future<void> save(QuestionLearningProgress progress) async {
+    values[progress.questionId] = progress;
   }
 }
 

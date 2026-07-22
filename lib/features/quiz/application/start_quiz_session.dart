@@ -1,4 +1,5 @@
 import '../domain/question.dart';
+import 'dart:math';
 import '../domain/question_learning_progress_repository.dart';
 import '../domain/question_repository.dart';
 import '../domain/quiz_question_selector.dart';
@@ -22,13 +23,24 @@ final class StartQuizSession {
   final SeedGenerator _seedGenerator;
   final QuestionLearningProgressRepository? _learningProgressRepository;
 
-  Future<List<Question>> call(QuickQuizLength length) async {
+  Future<List<Question>> call(
+    QuickQuizLength length, {
+    bool focusedOnly = false,
+  }) async {
     final questions = await _repository.loadActiveQuestions();
     final progressByQuestionId =
         await _learningProgressRepository?.loadAll() ?? const {};
+    final candidates = focusedOnly
+        ? questions
+              .where(
+                (question) =>
+                    (progressByQuestionId[question.id]?.priority ?? 0) > 0,
+              )
+              .toList()
+        : questions;
     return _selector.select(
-      questions: questions,
-      count: length.questionCount,
+      questions: candidates,
+      count: min(length.questionCount, candidates.length),
       seed: _seedGenerator(),
       progressByQuestionId: progressByQuestionId,
     );

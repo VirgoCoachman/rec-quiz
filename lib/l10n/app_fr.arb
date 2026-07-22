@@ -3,6 +3,7 @@
   "appTitle": "Quiz REC",
   "welcomeMessage": "Découvre l’histoire des rois dans les Chroniques, une question à la fois.",
   "startButton": "Commencer",
+  "focusedReviewButton": "Réviser les questions à renforcer",
   "quizLengthHeading": "Nombre de questions",
   "quizLengthOption": "{count} questions",
   "@quizLengthOption": {

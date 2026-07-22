@@ -1,1 +1,1 @@
-enum QuizSessionMode { quickQuiz, mistakesReview }
+enum QuizSessionMode { quickQuiz, mistakesReview, focusedReview }

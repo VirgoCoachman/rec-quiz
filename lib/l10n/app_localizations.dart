@@ -112,6 +112,12 @@ abstract class AppLocalizations {
   /// **'Commencer'**
   String get startButton;
 
+  /// No description provided for @focusedReviewButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réviser les questions à renforcer'**
+  String get focusedReviewButton;
+
   /// No description provided for @quizLengthHeading.
   ///
   /// In fr, this message translates to:

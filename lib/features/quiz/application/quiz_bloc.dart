@@ -26,6 +26,10 @@ final class QuizStarted extends QuizEvent {
   const QuizStarted();
 }
 
+final class QuizFocusedReviewStarted extends QuizEvent {
+  const QuizFocusedReviewStarted();
+}
+
 final class QuizLengthSelected extends QuizEvent {
   const QuizLengthSelected(this.length);
 
@@ -73,7 +77,9 @@ final class QuizInitial extends QuizState {
   const QuizInitial({
     required super.bestScore,
     super.length = QuickQuizLength.ten,
+    this.hasFocusedReview = false,
   });
+  final bool hasFocusedReview;
 }
 
 final class QuizLoading extends QuizState {
@@ -159,6 +165,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     on<QuizInitialized>(_initialize);
     on<QuizLengthSelected>(_selectLength);
     on<QuizStarted>(_loadSession);
+    on<QuizFocusedReviewStarted>(_loadFocusedReview);
     on<QuizRestarted>(_loadSession);
     on<QuizMistakesReviewStarted>(_startMistakesReview);
     on<QuizPauseRequested>(_pauseSession);
@@ -190,7 +197,13 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
       }
       final length = state.length;
       emit(
-        QuizInitial(bestScore: await _loadBestScore(length), length: length),
+        QuizInitial(
+          bestScore: await _loadBestScore(length),
+          length: length,
+          hasFocusedReview:
+              (await _learningProgressRepository?.loadAll() ?? const {}).values
+                  .any((progress) => progress.priority > 0),
+        ),
       );
     } on Object catch (error, stackTrace) {
       addError(error, stackTrace);
@@ -237,6 +250,45 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     } on Object catch (error, stackTrace) {
       addError(error, stackTrace);
       emit(QuizFailure(bestScore: bestScore, length: length));
+    }
+  }
+
+  Future<void> _loadFocusedReview(
+    QuizFocusedReviewStarted event,
+    Emitter<QuizState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! QuizInitial || !currentState.hasFocusedReview) return;
+    emit(
+      QuizLoading(
+        bestScore: currentState.bestScore,
+        length: currentState.length,
+      ),
+    );
+    try {
+      final questions = await _startQuizSession(
+        QuickQuizLength.five,
+        focusedOnly: true,
+      );
+      _sessionTimer.start();
+      emit(
+        QuizQuestionReady(
+          questions: questions,
+          currentIndex: 0,
+          score: 0,
+          bestScore: currentState.bestScore,
+          length: QuickQuizLength.five,
+          mode: QuizSessionMode.focusedReview,
+        ),
+      );
+    } on Object catch (error, stackTrace) {
+      addError(error, stackTrace);
+      emit(
+        QuizFailure(
+          bestScore: currentState.bestScore,
+          length: currentState.length,
+        ),
+      );
     }
   }
 
