@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../features/quiz/application/quiz_bloc.dart';
+import '../features/quiz/application/load_best_score.dart';
 import '../features/quiz/application/start_quiz_session.dart';
+import '../features/quiz/application/update_best_score.dart';
+import '../features/quiz/domain/best_score_repository.dart';
 import '../features/quiz/domain/question_repository.dart';
 import '../features/quiz/domain/quiz_question_selector.dart';
 import '../features/quiz/infrastructure/bundled_question_repository.dart';
@@ -10,8 +13,14 @@ import '../features/quiz/presentation/quiz_page.dart';
 import '../l10n/app_localizations.dart';
 
 final class RecQuizApp extends StatelessWidget {
-  const RecQuizApp({super.key, this.questionRepository, this.seedGenerator});
+  const RecQuizApp({
+    required this.bestScoreRepository,
+    super.key,
+    this.questionRepository,
+    this.seedGenerator,
+  });
 
+  final BestScoreRepository bestScoreRepository;
   final QuestionRepository? questionRepository;
   final SeedGenerator? seedGenerator;
 
@@ -35,7 +44,9 @@ final class RecQuizApp extends StatelessWidget {
             selector: const QuizQuestionSelector(),
             seedGenerator: generateSeed,
           ),
-        ),
+          LoadBestScore(bestScoreRepository),
+          UpdateBestScore(bestScoreRepository),
+        )..add(const QuizInitialized()),
         child: const QuizPage(),
       ),
     );

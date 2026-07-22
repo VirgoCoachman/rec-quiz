@@ -1,10 +1,16 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../domain/question.dart';
+import 'load_best_score.dart';
 import 'start_quiz_session.dart';
+import 'update_best_score.dart';
 
 sealed class QuizEvent {
   const QuizEvent();
+}
+
+final class QuizInitialized extends QuizEvent {
+  const QuizInitialized();
 }
 
 final class QuizStarted extends QuizEvent {
@@ -26,15 +32,17 @@ final class QuizRestarted extends QuizEvent {
 }
 
 sealed class QuizState {
-  const QuizState();
+  const QuizState({required this.bestScore});
+
+  final int bestScore;
 }
 
 final class QuizInitial extends QuizState {
-  const QuizInitial();
+  const QuizInitial({required super.bestScore});
 }
 
 final class QuizLoading extends QuizState {
-  const QuizLoading();
+  const QuizLoading({required super.bestScore});
 }
 
 final class QuizQuestionReady extends QuizState {
@@ -42,6 +50,7 @@ final class QuizQuestionReady extends QuizState {
     required List<Question> questions,
     required this.currentIndex,
     required this.score,
+    required super.bestScore,
     this.evaluation,
   }) : questions = List.unmodifiable(questions);
 
@@ -58,18 +67,24 @@ final class QuizQuestionReady extends QuizState {
 }
 
 final class QuizCompleted extends QuizState {
-  const QuizCompleted({required this.score, required this.totalQuestions});
+  const QuizCompleted({
+    required this.score,
+    required this.totalQuestions,
+    required super.bestScore,
+  });
 
   final int score;
   final int totalQuestions;
 }
 
 final class QuizFailure extends QuizState {
-  const QuizFailure();
+  const QuizFailure({required super.bestScore});
 }
 
 final class QuizBloc extends Bloc<QuizEvent, QuizState> {
-  QuizBloc(this._startQuizSession) : super(const QuizInitial()) {
+  QuizBloc(this._startQuizSession, this._loadBestScore, this._updateBestScore)
+    : super(const QuizInitial(bestScore: 0)) {
+    on<QuizInitialized>(_initialize);
     on<QuizStarted>(_loadSession);
     on<QuizRestarted>(_loadSession);
     on<QuizAnswerSubmitted>(_submitAnswer);
@@ -77,15 +92,36 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
   }
 
   final StartQuizSession _startQuizSession;
+  final LoadBestScore _loadBestScore;
+  final UpdateBestScore _updateBestScore;
 
-  Future<void> _loadSession(QuizEvent event, Emitter<QuizState> emit) async {
-    emit(const QuizLoading());
+  Future<void> _initialize(
+    QuizInitialized event,
+    Emitter<QuizState> emit,
+  ) async {
     try {
-      final questions = await _startQuizSession();
-      emit(QuizQuestionReady(questions: questions, currentIndex: 0, score: 0));
+      emit(QuizInitial(bestScore: await _loadBestScore()));
     } on Object catch (error, stackTrace) {
       addError(error, stackTrace);
-      emit(const QuizFailure());
+    }
+  }
+
+  Future<void> _loadSession(QuizEvent event, Emitter<QuizState> emit) async {
+    final bestScore = state.bestScore;
+    emit(QuizLoading(bestScore: bestScore));
+    try {
+      final questions = await _startQuizSession();
+      emit(
+        QuizQuestionReady(
+          questions: questions,
+          currentIndex: 0,
+          score: 0,
+          bestScore: bestScore,
+        ),
+      );
+    } on Object catch (error, stackTrace) {
+      addError(error, stackTrace);
+      emit(QuizFailure(bestScore: bestScore));
     }
   }
 
@@ -101,22 +137,36 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
         questions: currentState.questions,
         currentIndex: currentState.currentIndex,
         score: currentState.score + evaluation.score,
+        bestScore: currentState.bestScore,
         evaluation: evaluation,
       ),
     );
   }
 
-  void _moveNext(QuizNextRequested event, Emitter<QuizState> emit) {
+  Future<void> _moveNext(
+    QuizNextRequested event,
+    Emitter<QuizState> emit,
+  ) async {
     final currentState = state;
     if (currentState is! QuizQuestionReady || !currentState.hasAnswered) {
       return;
     }
 
     if (currentState.isLastQuestion) {
+      var bestScore = currentState.bestScore;
+      try {
+        bestScore = await _updateBestScore(
+          candidate: currentState.score,
+          currentBest: bestScore,
+        );
+      } on Object catch (error, stackTrace) {
+        addError(error, stackTrace);
+      }
       emit(
         QuizCompleted(
           score: currentState.score,
           totalQuestions: currentState.totalQuestions,
+          bestScore: bestScore,
         ),
       );
       return;
@@ -127,6 +177,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
         questions: currentState.questions,
         currentIndex: currentState.currentIndex + 1,
         score: currentState.score,
+        bestScore: currentState.bestScore,
       ),
     );
   }

@@ -18,7 +18,10 @@ final class QuizPage extends StatelessWidget {
         child: BlocBuilder<QuizBloc, QuizState>(
           builder: (context, state) {
             return switch (state) {
-              QuizInitial() => _WelcomeView(strings: strings),
+              QuizInitial() => _WelcomeView(
+                strings: strings,
+                bestScore: state.bestScore,
+              ),
               QuizLoading() => const Center(child: CircularProgressIndicator()),
               QuizQuestionReady() => _QuestionView(
                 state: state,
@@ -35,9 +38,10 @@ final class QuizPage extends StatelessWidget {
 }
 
 final class _WelcomeView extends StatelessWidget {
-  const _WelcomeView({required this.strings});
+  const _WelcomeView({required this.strings, required this.bestScore});
 
   final AppLocalizations strings;
+  final int bestScore;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +63,11 @@ final class _WelcomeView extends StatelessWidget {
                 strings.welcomeMessage,
                 style: Theme.of(context).textTheme.bodyLarge,
                 textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                strings.bestScore(bestScore, 10),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 32),
               FilledButton.icon(
@@ -320,6 +329,11 @@ final class _ResultView extends StatelessWidget {
             Text(
               strings.score(state.score, state.totalQuestions),
               style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              strings.bestScore(state.bestScore, state.totalQuestions),
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 28),
             FilledButton.icon(

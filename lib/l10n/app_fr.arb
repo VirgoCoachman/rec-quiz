@@ -32,6 +32,13 @@
       "total": {"type": "int"}
     }
   },
+  "bestScore": "Meilleur score : {score}/{total}",
+  "@bestScore": {
+    "placeholders": {
+      "score": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
   "restartButton": "Recommencer",
   "loadError": "Impossible de charger les questions.",
   "retryButton": "Réessayer"

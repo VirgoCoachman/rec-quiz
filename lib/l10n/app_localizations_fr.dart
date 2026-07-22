@@ -60,6 +60,11 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String bestScore(int score, int total) {
+    return 'Meilleur score : $score/$total';
+  }
+
+  @override
   String get restartButton => 'Recommencer';
 
   @override

@@ -178,6 +178,12 @@ abstract class AppLocalizations {
   /// **'Votre score : {score}/{total}'**
   String score(int score, int total);
 
+  /// No description provided for @bestScore.
+  ///
+  /// In fr, this message translates to:
+  /// **'Meilleur score : {score}/{total}'**
+  String bestScore(int score, int total);
+
   /// No description provided for @restartButton.
   ///
   /// In fr, this message translates to:
