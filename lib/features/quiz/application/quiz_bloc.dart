@@ -173,6 +173,8 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     try {
       final pausedSession = await _pausedSessionRepository?.load();
       if (pausedSession != null) {
+        _sessionTimer.start(initialElapsed: pausedSession.elapsed);
+        _sessionTimer.pause();
         emit(QuizPaused(session: _restorePausedSession(pausedSession)));
         return;
       }
@@ -293,9 +295,11 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
       return;
     }
 
-    _sessionTimer.pause();
+    final elapsed = _sessionTimer.pause();
     try {
-      await _pausedSessionRepository?.save(_pausedSnapshot(currentState));
+      await _pausedSessionRepository?.save(
+        _pausedSnapshot(currentState, elapsed: elapsed),
+      );
     } on Object catch (error, stackTrace) {
       addError(error, stackTrace);
     }
@@ -320,23 +324,26 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     emit(currentState.session);
   }
 
-  PausedQuizSession _pausedSnapshot(QuizQuestionReady state) =>
-      PausedQuizSession(
-        questions: state.questions,
-        currentIndex: state.currentIndex,
-        score: state.score,
-        bestScore: state.bestScore,
-        length: state.length,
-        mode: state.mode,
-        attempts: state.attempts
-            .map(
-              (attempt) => PausedQuestionAttempt(
-                questionId: attempt.questionId,
-                selectedOptionId: attempt.evaluation.selectedOptionId,
-              ),
-            )
-            .toList(),
-      );
+  PausedQuizSession _pausedSnapshot(
+    QuizQuestionReady state, {
+    required Duration elapsed,
+  }) => PausedQuizSession(
+    questions: state.questions,
+    currentIndex: state.currentIndex,
+    score: state.score,
+    bestScore: state.bestScore,
+    elapsed: elapsed,
+    length: state.length,
+    mode: state.mode,
+    attempts: state.attempts
+        .map(
+          (attempt) => PausedQuestionAttempt(
+            questionId: attempt.questionId,
+            selectedOptionId: attempt.evaluation.selectedOptionId,
+          ),
+        )
+        .toList(),
+  );
 
   QuizQuestionReady _restorePausedSession(PausedQuizSession snapshot) {
     final questionsById = {

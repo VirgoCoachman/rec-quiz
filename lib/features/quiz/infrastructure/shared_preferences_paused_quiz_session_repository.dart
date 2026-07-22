@@ -45,6 +45,9 @@ final class SharedPreferencesPausedQuizSessionRepository
         currentIndex: json['currentIndex']! as int,
         score: json['score']! as int,
         bestScore: json['bestScore']! as int,
+        elapsed: Duration(
+          milliseconds: json['elapsedMilliseconds'] as int? ?? 0,
+        ),
         length: QuickQuizLength.fromQuestionCount(json['length']! as int),
         mode: QuizSessionMode.values.byName(json['mode']! as String),
         attempts: attempts,
@@ -65,6 +68,7 @@ final class SharedPreferencesPausedQuizSessionRepository
         'currentIndex': session.currentIndex,
         'score': session.score,
         'bestScore': session.bestScore,
+        'elapsedMilliseconds': session.elapsed.inMilliseconds,
         'length': session.length.questionCount,
         'mode': session.mode.name,
         'attempts': session.attempts

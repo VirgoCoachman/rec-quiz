@@ -18,6 +18,7 @@ final class PausedQuizSession {
     required this.currentIndex,
     required this.score,
     required this.bestScore,
+    required this.elapsed,
     required this.length,
     required this.mode,
     required List<PausedQuestionAttempt> attempts,
@@ -34,6 +35,7 @@ final class PausedQuizSession {
   final int currentIndex;
   final int score;
   final int bestScore;
+  final Duration elapsed;
   final QuickQuizLength length;
   final QuizSessionMode mode;
   final List<PausedQuestionAttempt> attempts;

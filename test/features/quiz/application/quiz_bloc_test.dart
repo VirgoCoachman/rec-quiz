@@ -68,6 +68,7 @@ void main() {
           currentIndex: 1,
           score: 1,
           bestScore: 6,
+          elapsed: const Duration(minutes: 2),
           length: QuickQuizLength.ten,
           mode: QuizSessionMode.quickQuiz,
           attempts: [
@@ -737,13 +738,14 @@ final class _FakeQuizSessionTimer implements QuizSessionTimer {
   var stopCount = 0;
 
   @override
-  void start() {
+  void start({Duration initialElapsed = Duration.zero}) {
     startCount++;
   }
 
   @override
-  void pause() {
+  Duration pause() {
     pauseCount++;
+    return Duration.zero;
   }
 
   @override

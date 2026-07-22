@@ -1,7 +1,7 @@
 abstract interface class QuizSessionTimer {
-  void start();
+  void start({Duration initialElapsed = Duration.zero});
 
-  void pause();
+  Duration pause();
 
   void resume();
 

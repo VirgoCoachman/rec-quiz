@@ -34,4 +34,15 @@ void main() {
 
     expect(timer.stop(), greaterThan(Duration.zero));
   });
+
+  test('continues from a restored elapsed duration', () async {
+    final timer = StopwatchQuizSessionTimer();
+
+    timer.start(initialElapsed: const Duration(minutes: 2, seconds: 15));
+    timer.pause();
+    timer.resume();
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    expect(timer.stop(), greaterThan(const Duration(minutes: 2, seconds: 15)));
+  });
 }

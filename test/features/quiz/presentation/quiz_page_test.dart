@@ -812,13 +812,14 @@ final class _FakeQuizSessionTimer implements QuizSessionTimer {
   var stopCount = 0;
 
   @override
-  void start() {
+  void start({Duration initialElapsed = Duration.zero}) {
     startCount++;
   }
 
   @override
-  void pause() {
+  Duration pause() {
     pauseCount++;
+    return elapsed;
   }
 
   @override

@@ -20,6 +20,7 @@ void main() {
       currentIndex: 1,
       score: 1,
       bestScore: 3,
+      elapsed: const Duration(minutes: 2, seconds: 15),
       length: QuickQuizLength.five,
       mode: QuizSessionMode.quickQuiz,
       attempts: [
@@ -48,6 +49,7 @@ void main() {
     expect(restored.currentIndex, 1);
     expect(restored.score, 1);
     expect(restored.bestScore, 3);
+    expect(restored.elapsed, const Duration(minutes: 2, seconds: 15));
     expect(restored.length, QuickQuizLength.five);
     expect(restored.mode, QuizSessionMode.quickQuiz);
     expect(restored.attempts.single.questionId, questions.first.id);
