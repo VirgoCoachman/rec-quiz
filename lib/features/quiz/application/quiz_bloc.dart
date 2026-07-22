@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../domain/question.dart';
 import '../domain/question_attempt.dart';
 import '../domain/mistakes_review_selector.dart';
+import '../domain/paused_quiz_session.dart';
+import '../domain/paused_quiz_session_repository.dart';
 import '../domain/quiz_session_mode.dart';
 import '../domain/quiz_session_timer.dart';
 import '../domain/quick_quiz_length.dart';
@@ -139,10 +141,12 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     this._loadBestScore,
     this._updateBestScore, {
     required QuizSessionTimer sessionTimer,
+    PausedQuizSessionRepository? pausedSessionRepository,
     MistakesReviewSelector mistakesReviewSelector =
         const MistakesReviewSelector(),
   }) : _sessionTimer = sessionTimer,
        _mistakesReviewSelector = mistakesReviewSelector,
+       _pausedSessionRepository = pausedSessionRepository,
        super(const QuizInitial(bestScore: 0)) {
     on<QuizInitialized>(_initialize);
     on<QuizLengthSelected>(_selectLength);
@@ -160,12 +164,18 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
   final UpdateBestScore _updateBestScore;
   final QuizSessionTimer _sessionTimer;
   final MistakesReviewSelector _mistakesReviewSelector;
+  final PausedQuizSessionRepository? _pausedSessionRepository;
 
   Future<void> _initialize(
     QuizInitialized event,
     Emitter<QuizState> emit,
   ) async {
     try {
+      final pausedSession = await _pausedSessionRepository?.load();
+      if (pausedSession != null) {
+        emit(QuizPaused(session: _restorePausedSession(pausedSession)));
+        return;
+      }
       final length = state.length;
       emit(
         QuizInitial(bestScore: await _loadBestScore(length), length: length),
@@ -273,7 +283,10 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     );
   }
 
-  void _pauseSession(QuizPauseRequested event, Emitter<QuizState> emit) {
+  Future<void> _pauseSession(
+    QuizPauseRequested event,
+    Emitter<QuizState> emit,
+  ) async {
     final currentState = state;
     if (currentState is! QuizQuestionReady ||
         currentState.completedDuration != null) {
@@ -281,17 +294,80 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     }
 
     _sessionTimer.pause();
+    try {
+      await _pausedSessionRepository?.save(_pausedSnapshot(currentState));
+    } on Object catch (error, stackTrace) {
+      addError(error, stackTrace);
+    }
     emit(QuizPaused(session: currentState));
   }
 
-  void _resumeSession(QuizResumeRequested event, Emitter<QuizState> emit) {
+  Future<void> _resumeSession(
+    QuizResumeRequested event,
+    Emitter<QuizState> emit,
+  ) async {
     final currentState = state;
     if (currentState is! QuizPaused) {
       return;
     }
 
+    try {
+      await _pausedSessionRepository?.clear();
+    } on Object catch (error, stackTrace) {
+      addError(error, stackTrace);
+    }
     _sessionTimer.resume();
     emit(currentState.session);
+  }
+
+  PausedQuizSession _pausedSnapshot(QuizQuestionReady state) =>
+      PausedQuizSession(
+        questions: state.questions,
+        currentIndex: state.currentIndex,
+        score: state.score,
+        bestScore: state.bestScore,
+        length: state.length,
+        mode: state.mode,
+        attempts: state.attempts
+            .map(
+              (attempt) => PausedQuestionAttempt(
+                questionId: attempt.questionId,
+                selectedOptionId: attempt.evaluation.selectedOptionId,
+              ),
+            )
+            .toList(),
+      );
+
+  QuizQuestionReady _restorePausedSession(PausedQuizSession snapshot) {
+    final questionsById = {
+      for (final question in snapshot.questions) question.id: question,
+    };
+    final attempts = snapshot.attempts
+        .map(
+          (attempt) => QuestionAttempt.answer(
+            question: questionsById[attempt.questionId]!,
+            selectedOptionId: attempt.selectedOptionId,
+          ),
+        )
+        .toList();
+    final currentQuestionId = snapshot.questions[snapshot.currentIndex].id;
+    QuestionAttempt? currentAttempt;
+    for (final attempt in attempts) {
+      if (attempt.questionId == currentQuestionId) {
+        currentAttempt = attempt;
+        break;
+      }
+    }
+    return QuizQuestionReady(
+      questions: snapshot.questions,
+      currentIndex: snapshot.currentIndex,
+      score: snapshot.score,
+      bestScore: snapshot.bestScore,
+      length: snapshot.length,
+      mode: snapshot.mode,
+      attempts: attempts,
+      currentAttempt: currentAttempt,
+    );
   }
 
   Future<void> _moveNext(

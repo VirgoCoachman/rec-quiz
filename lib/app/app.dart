@@ -9,6 +9,7 @@ import '../features/quiz/application/start_quiz_session.dart';
 import '../features/quiz/application/update_best_score.dart';
 import '../features/quiz/domain/best_score_repository.dart';
 import '../features/quiz/domain/question_repository.dart';
+import '../features/quiz/domain/paused_quiz_session_repository.dart';
 import '../features/quiz/domain/quiz_question_selector.dart';
 import '../features/quiz/domain/quiz_session_timer.dart';
 import '../features/quiz/infrastructure/bundled_question_repository.dart';
@@ -28,6 +29,7 @@ final class RecQuizApp extends StatelessWidget {
     this.seedGenerator,
     this.quizFeedbackPlayer = const MethodChannelQuizFeedbackPlayer(),
     this.quizSessionTimer,
+    this.pausedQuizSessionRepository,
   });
 
   final BestScoreRepository bestScoreRepository;
@@ -36,6 +38,7 @@ final class RecQuizApp extends StatelessWidget {
   final SeedGenerator? seedGenerator;
   final QuizFeedbackPlayer quizFeedbackPlayer;
   final QuizSessionTimer? quizSessionTimer;
+  final PausedQuizSessionRepository? pausedQuizSessionRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +69,7 @@ final class RecQuizApp extends StatelessWidget {
               LoadBestScore(bestScoreRepository),
               UpdateBestScore(bestScoreRepository),
               sessionTimer: sessionTimer,
+              pausedSessionRepository: pausedQuizSessionRepository,
             )..add(const QuizInitialized()),
           ),
         ],

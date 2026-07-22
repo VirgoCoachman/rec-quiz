@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
 import 'features/quiz/infrastructure/shared_preferences_best_score_repository.dart';
+import 'features/quiz/infrastructure/shared_preferences_paused_quiz_session_repository.dart';
 import 'features/settings/infrastructure/shared_preferences_sound_settings_repository.dart';
 
 Future<void> main() async {
@@ -12,6 +13,9 @@ Future<void> main() async {
   runApp(
     RecQuizApp(
       bestScoreRepository: SharedPreferencesBestScoreRepository(preferences),
+      pausedQuizSessionRepository: SharedPreferencesPausedQuizSessionRepository(
+        preferences,
+      ),
       soundSettingsRepository: SharedPreferencesSoundSettingsRepository(
         preferences,
       ),

@@ -5,6 +5,8 @@ import 'package:rec_quiz/features/quiz/application/quiz_bloc.dart';
 import 'package:rec_quiz/features/quiz/application/start_quiz_session.dart';
 import 'package:rec_quiz/features/quiz/application/update_best_score.dart';
 import 'package:rec_quiz/features/quiz/domain/best_score_repository.dart';
+import 'package:rec_quiz/features/quiz/domain/paused_quiz_session.dart';
+import 'package:rec_quiz/features/quiz/domain/paused_quiz_session_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/question.dart';
 import 'package:rec_quiz/features/quiz/domain/question_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/quiz_question_selector.dart';
@@ -51,6 +53,38 @@ void main() {
     act: (bloc) => bloc.add(const QuizInitialized()),
     expect: () => [
       isA<QuizInitial>().having((state) => state.bestScore, 'best score', 7),
+    ],
+  );
+
+  blocTest<QuizBloc, QuizState>(
+    'restores a persisted paused session during initialization',
+    build: () => _buildBloc(
+      startQuizSession,
+      bestScoreRepository,
+      sessionTimer,
+      pausedSessionRepository: _MemoryPausedQuizSessionRepository(
+        PausedQuizSession(
+          questions: expectedOrder,
+          currentIndex: 1,
+          score: 1,
+          bestScore: 6,
+          length: QuickQuizLength.ten,
+          mode: QuizSessionMode.quickQuiz,
+          attempts: [
+            PausedQuestionAttempt(
+              questionId: expectedOrder.first.id,
+              selectedOptionId: expectedOrder.first.correctOptionId,
+            ),
+          ],
+        ),
+      ),
+    ),
+    act: (bloc) => bloc.add(const QuizInitialized()),
+    expect: () => [
+      isA<QuizPaused>()
+          .having((state) => state.session.currentIndex, 'index', 1)
+          .having((state) => state.session.score, 'score', 1)
+          .having((state) => state.session.attempts, 'attempts', hasLength(1)),
     ],
   );
 
@@ -598,13 +632,15 @@ void main() {
 QuizBloc _buildBloc(
   StartQuizSession startQuizSession,
   BestScoreRepository bestScoreRepository,
-  QuizSessionTimer sessionTimer,
-) {
+  QuizSessionTimer sessionTimer, {
+  PausedQuizSessionRepository? pausedSessionRepository,
+}) {
   return QuizBloc(
     startQuizSession,
     LoadBestScore(bestScoreRepository),
     UpdateBestScore(bestScoreRepository),
     sessionTimer: sessionTimer,
+    pausedSessionRepository: pausedSessionRepository,
   );
 }
 
@@ -616,6 +652,26 @@ Future<void> _completePerfectSession(QuizBloc bloc) async {
     await Future<void>.delayed(Duration.zero);
     bloc.add(const QuizNextRequested());
     await Future<void>.delayed(Duration.zero);
+  }
+}
+
+final class _MemoryPausedQuizSessionRepository
+    implements PausedQuizSessionRepository {
+  _MemoryPausedQuizSessionRepository(this.session);
+
+  PausedQuizSession? session;
+
+  @override
+  Future<void> clear() async {
+    session = null;
+  }
+
+  @override
+  Future<PausedQuizSession?> load() async => session;
+
+  @override
+  Future<void> save(PausedQuizSession value) async {
+    session = value;
   }
 }
 
