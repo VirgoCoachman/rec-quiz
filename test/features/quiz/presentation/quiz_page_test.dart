@@ -683,6 +683,47 @@ void main() {
     expect(find.text('Quiz en pause'), findsOneWidget);
     expect(sessionTimer.pauseCount, 1);
   });
+
+  testWidgets(
+    'pauses an active quiz once in background and waits for explicit resume',
+    (tester) async {
+      final sessionTimer = _FakeQuizSessionTimer(const Duration(seconds: 30));
+      final ordered = const QuizQuestionSelector().select(
+        questions: questions,
+        count: 10,
+        seed: 42,
+      );
+
+      await tester.pumpWidget(
+        RecQuizApp(
+          questionRepository: _FakeQuestionRepository(questions),
+          bestScoreRepository: _MemoryBestScoreRepository({}),
+          soundSettingsRepository: _MemorySoundSettingsRepository(false),
+          quizFeedbackPlayer: _RecordingQuizFeedbackPlayer(),
+          quizSessionTimer: sessionTimer,
+          seedGenerator: () => 42,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Commencer'));
+      await tester.pumpAndSettle();
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Quiz en pause'), findsOneWidget);
+      expect(find.text(ordered.first.prompt), findsNothing);
+      expect(sessionTimer.pauseCount, 1);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Quiz en pause'), findsOneWidget);
+      expect(sessionTimer.pauseCount, 1);
+      expect(sessionTimer.resumeCount, 0);
+    },
+  );
 }
 
 final class _FakeQuestionRepository implements QuestionRepository {

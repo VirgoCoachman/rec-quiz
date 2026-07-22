@@ -9,8 +9,33 @@ import '../domain/quick_quiz_length.dart';
 import '../domain/quiz_session_mode.dart';
 import '../../settings/application/sound_settings_cubit.dart';
 
-final class QuizPage extends StatelessWidget {
+final class QuizPage extends StatefulWidget {
   const QuizPage({super.key});
+
+  @override
+  State<QuizPage> createState() => _QuizPageState();
+}
+
+final class _QuizPageState extends State<QuizPage> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      context.read<QuizBloc>().add(const QuizPauseRequested());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
