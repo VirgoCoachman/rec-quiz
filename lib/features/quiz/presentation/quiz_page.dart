@@ -16,67 +16,74 @@ final class QuizPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(strings.appTitle),
-        actions: [
-          BlocBuilder<QuizBloc, QuizState>(
-            builder: (context, state) {
-              final canPause =
-                  state is QuizQuestionReady && state.completedDuration == null;
-              if (!canPause) {
-                return const SizedBox.shrink();
-              }
+    return BlocBuilder<QuizBloc, QuizState>(
+      builder: (context, state) => PopScope<void>(
+        canPop: state is! QuizQuestionReady && state is! QuizPaused,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop && state is QuizQuestionReady) {
+            context.read<QuizBloc>().add(const QuizPauseRequested());
+          }
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(strings.appTitle),
+            actions: [
+              BlocBuilder<QuizBloc, QuizState>(
+                builder: (context, state) {
+                  final canPause =
+                      state is QuizQuestionReady &&
+                      state.completedDuration == null;
+                  if (!canPause) {
+                    return const SizedBox.shrink();
+                  }
 
-              return Semantics(
-                label: strings.pauseQuizButton,
-                button: true,
-                child: ExcludeSemantics(
-                  child: IconButton(
-                    onPressed: () => context.read<QuizBloc>().add(
-                      const QuizPauseRequested(),
+                  return Semantics(
+                    label: strings.pauseQuizButton,
+                    button: true,
+                    child: ExcludeSemantics(
+                      child: IconButton(
+                        onPressed: () => context.read<QuizBloc>().add(
+                          const QuizPauseRequested(),
+                        ),
+                        tooltip: strings.pauseQuizButton,
+                        icon: const Icon(Icons.pause_rounded),
+                      ),
                     ),
-                    tooltip: strings.pauseQuizButton,
-                    icon: const Icon(Icons.pause_rounded),
-                  ),
-                ),
-              );
-            },
-          ),
-          BlocBuilder<SoundSettingsCubit, SoundSettingsState>(
-            builder: (context, soundState) {
-              final isEnabled = soundState.isEnabled;
-              final label = isEnabled
-                  ? strings.disableSoundButton
-                  : strings.enableSoundButton;
-              return Semantics(
-                label: label,
-                button: true,
-                enabled: !soundState.isLoading,
-                child: ExcludeSemantics(
-                  child: IconButton(
-                    onPressed: soundState.isLoading
-                        ? null
-                        : () => context.read<SoundSettingsCubit>().setEnabled(
-                            !isEnabled,
-                          ),
-                    tooltip: label,
-                    icon: Icon(
-                      isEnabled
-                          ? Icons.volume_up_rounded
-                          : Icons.volume_off_rounded,
+                  );
+                },
+              ),
+              BlocBuilder<SoundSettingsCubit, SoundSettingsState>(
+                builder: (context, soundState) {
+                  final isEnabled = soundState.isEnabled;
+                  final label = isEnabled
+                      ? strings.disableSoundButton
+                      : strings.enableSoundButton;
+                  return Semantics(
+                    label: label,
+                    button: true,
+                    enabled: !soundState.isLoading,
+                    child: ExcludeSemantics(
+                      child: IconButton(
+                        onPressed: soundState.isLoading
+                            ? null
+                            : () => context
+                                  .read<SoundSettingsCubit>()
+                                  .setEnabled(!isEnabled),
+                        tooltip: label,
+                        icon: Icon(
+                          isEnabled
+                              ? Icons.volume_up_rounded
+                              : Icons.volume_off_rounded,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              );
-            },
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: BlocBuilder<QuizBloc, QuizState>(
-          builder: (context, state) {
-            return switch (state) {
+          body: SafeArea(
+            child: switch (state) {
               QuizInitial() => _WelcomeView(strings: strings, state: state),
               QuizLoading() => const Center(child: CircularProgressIndicator()),
               QuizQuestionReady() => _QuestionView(
@@ -86,8 +93,8 @@ final class QuizPage extends StatelessWidget {
               QuizCompleted() => _ResultView(state: state, strings: strings),
               QuizPaused() => _PausedView(strings: strings),
               QuizFailure() => _FailureView(strings: strings),
-            };
-          },
+            },
+          ),
         ),
       ),
     );

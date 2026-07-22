@@ -645,6 +645,44 @@ void main() {
     expect(sessionTimer.resumeCount, 2);
     semantics.dispose();
   });
+
+  testWidgets('system back pauses an active quiz and is ignored while paused', (
+    tester,
+  ) async {
+    final sessionTimer = _FakeQuizSessionTimer(const Duration(seconds: 30));
+    final ordered = const QuizQuestionSelector().select(
+      questions: questions,
+      count: 10,
+      seed: 42,
+    );
+
+    await tester.pumpWidget(
+      RecQuizApp(
+        questionRepository: _FakeQuestionRepository(questions),
+        bestScoreRepository: _MemoryBestScoreRepository({}),
+        soundSettingsRepository: _MemorySoundSettingsRepository(false),
+        quizFeedbackPlayer: _RecordingQuizFeedbackPlayer(),
+        quizSessionTimer: sessionTimer,
+        seedGenerator: () => 42,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Commencer'));
+    await tester.pumpAndSettle();
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Quiz en pause'), findsOneWidget);
+    expect(find.text(ordered.first.prompt), findsNothing);
+    expect(sessionTimer.pauseCount, 1);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Quiz en pause'), findsOneWidget);
+    expect(sessionTimer.pauseCount, 1);
+  });
 }
 
 final class _FakeQuestionRepository implements QuestionRepository {
