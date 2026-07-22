@@ -487,6 +487,98 @@ void main() {
     expect(find.text(secondOrder.first.prompt), findsOneWidget);
     semantics.dispose();
   });
+
+  testWidgets('repeats only remaining mistakes until they are mastered', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final ordered = const QuizQuestionSelector().select(
+      questions: questions,
+      count: 10,
+      seed: 42,
+    );
+
+    await tester.pumpWidget(
+      RecQuizApp(
+        questionRepository: _FakeQuestionRepository(questions),
+        bestScoreRepository: _MemoryBestScoreRepository({}),
+        soundSettingsRepository: _MemorySoundSettingsRepository(false),
+        quizFeedbackPlayer: _RecordingQuizFeedbackPlayer(),
+        quizSessionTimer: _FakeQuizSessionTimer(const Duration(seconds: 30)),
+        seedGenerator: () => 42,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Commencer'));
+    await tester.pumpAndSettle();
+
+    for (var index = 0; index < ordered.length; index++) {
+      final question = ordered[index];
+      final selectedOption = index < 2
+          ? question.options.firstWhere(
+              (option) => option.id != question.correctOptionId,
+            )
+          : question.correctOption;
+      await tester.tap(find.text(selectedOption.label));
+      await tester.pumpAndSettle();
+      final action = find.text(
+        index == ordered.length - 1 ? 'Voir mon résultat' : 'Question suivante',
+      );
+      await tester.ensureVisible(action);
+      await tester.tap(action);
+      await tester.pumpAndSettle();
+    }
+
+    final firstReviewButton = find.bySemanticsLabel('Revoir mes erreurs (2)');
+    await tester.ensureVisible(firstReviewButton);
+    await tester.tap(firstReviewButton);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(ordered[0].correctOption.label));
+    await tester.pumpAndSettle();
+    var action = find.text('Question suivante');
+    await tester.ensureVisible(action);
+    await tester.tap(action);
+    await tester.pumpAndSettle();
+
+    final unresolvedQuestion = ordered[1];
+    final incorrectOption = unresolvedQuestion.options.firstWhere(
+      (option) => option.id != unresolvedQuestion.correctOptionId,
+    );
+    await tester.tap(find.text(incorrectOption.label));
+    await tester.pumpAndSettle();
+    action = find.text('Voir mon résultat');
+    await tester.ensureVisible(action);
+    await tester.tap(action);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Révision terminée'), findsOneWidget);
+    expect(find.text('Votre score : 1/2'), findsOneWidget);
+    final remainingButton = find.bySemanticsLabel(
+      'Revoir les erreurs restantes (1)',
+    );
+    expect(remainingButton, findsOneWidget);
+    await tester.ensureVisible(remainingButton);
+    await tester.tap(remainingButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Question 1 sur 1'), findsOneWidget);
+    expect(find.text(unresolvedQuestion.prompt), findsOneWidget);
+    await tester.tap(find.text(unresolvedQuestion.correctOption.label));
+    await tester.pumpAndSettle();
+    action = find.text('Voir mon résultat');
+    await tester.ensureVisible(action);
+    await tester.tap(action);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Votre score : 1/1'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Revoir les erreurs restantes (1)'),
+      findsNothing,
+    );
+    expect(find.text('Nouveau quiz rapide'), findsOneWidget);
+    semantics.dispose();
+  });
 }
 
 final class _FakeQuestionRepository implements QuestionRepository {

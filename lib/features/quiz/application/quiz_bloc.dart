@@ -206,8 +206,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     Emitter<QuizState> emit,
   ) {
     final currentState = state;
-    if (currentState is! QuizCompleted ||
-        currentState.mode != QuizSessionMode.quickQuiz) {
+    if (currentState is! QuizCompleted) {
       return;
     }
 

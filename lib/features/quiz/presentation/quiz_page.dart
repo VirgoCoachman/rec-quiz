@@ -382,6 +382,9 @@ final class _ResultView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMistakesReview = state.mode == QuizSessionMode.mistakesReview;
     final incorrectCount = state.incorrectAttempts.length;
+    final reviewButtonLabel = isMistakesReview
+        ? strings.reviewRemainingMistakesButton(incorrectCount)
+        : strings.reviewMistakesButton(incorrectCount);
 
     return Center(
       child: SingleChildScrollView(
@@ -432,9 +435,9 @@ final class _ResultView extends StatelessWidget {
               const SizedBox(height: 12),
             ],
             const SizedBox(height: 16),
-            if (!isMistakesReview && incorrectCount > 0) ...[
+            if (incorrectCount > 0) ...[
               Semantics(
-                label: strings.reviewMistakesButton(incorrectCount),
+                label: reviewButtonLabel,
                 button: true,
                 child: ExcludeSemantics(
                   child: FilledButton.icon(
@@ -442,7 +445,7 @@ final class _ResultView extends StatelessWidget {
                       const QuizMistakesReviewStarted(),
                     ),
                     icon: const Icon(Icons.replay_rounded),
-                    label: Text(strings.reviewMistakesButton(incorrectCount)),
+                    label: Text(reviewButtonLabel),
                   ),
                 ),
               ),

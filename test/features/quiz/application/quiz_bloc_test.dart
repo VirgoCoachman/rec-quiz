@@ -326,6 +326,94 @@ void main() {
     },
   );
 
+  test(
+    'keeps only unresolved mistakes in each successive review cycle',
+    () async {
+      final iterativeTimer = _FakeQuizSessionTimer(const [
+        Duration(seconds: 40),
+        Duration(seconds: 12),
+        Duration(seconds: 5),
+      ]);
+      final bloc = _buildBloc(
+        startQuizSession,
+        bestScoreRepository,
+        iterativeTimer,
+      );
+      addTearDown(bloc.close);
+      bloc.add(const QuizStarted());
+      await Future<void>.delayed(Duration.zero);
+
+      final initiallyMissedIds = <String>[];
+      for (var index = 0; index < 10; index++) {
+        final ready = bloc.state as QuizQuestionReady;
+        final shouldMiss = index < 2;
+        if (shouldMiss) {
+          initiallyMissedIds.add(ready.question.id);
+        }
+        bloc.add(
+          QuizAnswerSubmitted(
+            shouldMiss
+                ? ready.question.options
+                      .firstWhere(
+                        (option) => option.id != ready.question.correctOptionId,
+                      )
+                      .id
+                : ready.question.correctOptionId,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const QuizNextRequested());
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      bloc.add(const QuizMistakesReviewStarted());
+      await Future<void>.delayed(Duration.zero);
+      var review = bloc.state as QuizQuestionReady;
+      expect(
+        review.questions.map((question) => question.id),
+        initiallyMissedIds,
+      );
+
+      bloc.add(QuizAnswerSubmitted(review.question.correctOptionId));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const QuizNextRequested());
+      await Future<void>.delayed(Duration.zero);
+      review = bloc.state as QuizQuestionReady;
+      final unresolvedQuestionId = review.question.id;
+      final incorrectOption = review.question.options.firstWhere(
+        (option) => option.id != review.question.correctOptionId,
+      );
+      bloc.add(QuizAnswerSubmitted(incorrectOption.id));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const QuizNextRequested());
+      await Future<void>.delayed(Duration.zero);
+
+      final firstReviewResult = bloc.state as QuizCompleted;
+      expect(firstReviewResult.incorrectAttempts, hasLength(1));
+      bloc
+        ..add(const QuizMistakesReviewStarted())
+        ..add(const QuizMistakesReviewStarted());
+      await Future<void>.delayed(Duration.zero);
+
+      review = bloc.state as QuizQuestionReady;
+      expect(review.mode, QuizSessionMode.mistakesReview);
+      expect(review.totalQuestions, 1);
+      expect(review.question.id, unresolvedQuestionId);
+      expect(review.attempts, isEmpty);
+
+      await _completePerfectSession(bloc);
+      final mastered = bloc.state as QuizCompleted;
+      expect(mastered.incorrectAttempts, isEmpty);
+      final masteredState = bloc.state;
+      bloc.add(const QuizMistakesReviewStarted());
+      await Future<void>.delayed(Duration.zero);
+      expect(identical(bloc.state, masteredState), isTrue);
+      expect(bestScoreRepository.savedScores, [(QuickQuizLength.ten, 8)]);
+      expect(iterativeTimer.startCount, 3);
+      expect(iterativeTimer.stopCount, 3);
+    },
+  );
+
   test('stops timing as soon as the final answer is submitted', () async {
     final bloc = _buildBloc(
       startQuizSession,

@@ -214,6 +214,12 @@ abstract class AppLocalizations {
   /// **'Revoir mes erreurs ({count})'**
   String reviewMistakesButton(int count);
 
+  /// No description provided for @reviewRemainingMistakesButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Revoir les erreurs restantes ({count})'**
+  String reviewRemainingMistakesButton(int count);
+
   /// No description provided for @newQuickQuizButton.
   ///
   /// In fr, this message translates to:

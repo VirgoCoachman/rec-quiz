@@ -82,6 +82,11 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String reviewRemainingMistakesButton(int count) {
+    return 'Revoir les erreurs restantes ($count)';
+  }
+
+  @override
   String get newQuickQuizButton => 'Nouveau quiz rapide';
 
   @override

@@ -41,6 +41,10 @@
   "@reviewMistakesButton": {
     "placeholders": {"count": {"type": "int"}}
   },
+  "reviewRemainingMistakesButton": "Revoir les erreurs restantes ({count})",
+  "@reviewRemainingMistakesButton": {
+    "placeholders": {"count": {"type": "int"}}
+  },
   "newQuickQuizButton": "Nouveau quiz rapide",
   "detailedReviewHeading": "Correction détaillée",
   "correctAnswerStatus": "réponse correcte",
