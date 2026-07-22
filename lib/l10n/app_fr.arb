@@ -36,6 +36,12 @@
   "nextQuestionButton": "Question suivante",
   "showResultButton": "Voir mon résultat",
   "resultHeading": "Résultat",
+  "mistakesReviewCompletedHeading": "Révision terminée",
+  "reviewMistakesButton": "Revoir mes erreurs ({count})",
+  "@reviewMistakesButton": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "newQuickQuizButton": "Nouveau quiz rapide",
   "detailedReviewHeading": "Correction détaillée",
   "correctAnswerStatus": "réponse correcte",
   "incorrectAnswerStatus": "réponse incorrecte",

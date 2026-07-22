@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../domain/question.dart';
 import '../domain/question_attempt.dart';
+import '../domain/mistakes_review_selector.dart';
+import '../domain/quiz_session_mode.dart';
 import '../domain/quiz_session_timer.dart';
 import '../domain/quick_quiz_length.dart';
 import 'load_best_score.dart';
@@ -40,6 +42,10 @@ final class QuizRestarted extends QuizEvent {
   const QuizRestarted();
 }
 
+final class QuizMistakesReviewStarted extends QuizEvent {
+  const QuizMistakesReviewStarted();
+}
+
 sealed class QuizState {
   const QuizState({required this.bestScore, required this.length});
 
@@ -65,6 +71,7 @@ final class QuizQuestionReady extends QuizState {
     required this.score,
     required super.bestScore,
     required super.length,
+    required this.mode,
     List<QuestionAttempt> attempts = const [],
     this.currentAttempt,
     this.completedDuration,
@@ -72,6 +79,7 @@ final class QuizQuestionReady extends QuizState {
        attempts = List.unmodifiable(attempts);
 
   final List<Question> questions;
+  final QuizSessionMode mode;
   final int currentIndex;
   final int score;
   final List<QuestionAttempt> attempts;
@@ -93,13 +101,17 @@ final class QuizCompleted extends QuizState {
     required this.duration,
     required super.bestScore,
     required super.length,
+    required this.mode,
     required List<QuestionAttempt> attempts,
   }) : attempts = List.unmodifiable(attempts);
 
   final int score;
+  final QuizSessionMode mode;
   final int totalQuestions;
   final Duration duration;
   final List<QuestionAttempt> attempts;
+  List<QuestionAttempt> get incorrectAttempts =>
+      List.unmodifiable(attempts.where((attempt) => !attempt.isCorrect));
 }
 
 final class QuizFailure extends QuizState {
@@ -112,12 +124,16 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
     this._loadBestScore,
     this._updateBestScore, {
     required QuizSessionTimer sessionTimer,
+    MistakesReviewSelector mistakesReviewSelector =
+        const MistakesReviewSelector(),
   }) : _sessionTimer = sessionTimer,
+       _mistakesReviewSelector = mistakesReviewSelector,
        super(const QuizInitial(bestScore: 0)) {
     on<QuizInitialized>(_initialize);
     on<QuizLengthSelected>(_selectLength);
     on<QuizStarted>(_loadSession);
     on<QuizRestarted>(_loadSession);
+    on<QuizMistakesReviewStarted>(_startMistakesReview);
     on<QuizAnswerSubmitted>(_submitAnswer);
     on<QuizNextRequested>(_moveNext);
   }
@@ -126,6 +142,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
   final LoadBestScore _loadBestScore;
   final UpdateBestScore _updateBestScore;
   final QuizSessionTimer _sessionTimer;
+  final MistakesReviewSelector _mistakesReviewSelector;
 
   Future<void> _initialize(
     QuizInitialized event,
@@ -175,12 +192,41 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
           score: 0,
           bestScore: bestScore,
           length: length,
+          mode: QuizSessionMode.quickQuiz,
         ),
       );
     } on Object catch (error, stackTrace) {
       addError(error, stackTrace);
       emit(QuizFailure(bestScore: bestScore, length: length));
     }
+  }
+
+  void _startMistakesReview(
+    QuizMistakesReviewStarted event,
+    Emitter<QuizState> emit,
+  ) {
+    final currentState = state;
+    if (currentState is! QuizCompleted ||
+        currentState.mode != QuizSessionMode.quickQuiz) {
+      return;
+    }
+
+    final questions = _mistakesReviewSelector.select(currentState.attempts);
+    if (questions.isEmpty) {
+      return;
+    }
+
+    _sessionTimer.start();
+    emit(
+      QuizQuestionReady(
+        questions: questions,
+        currentIndex: 0,
+        score: 0,
+        bestScore: currentState.bestScore,
+        length: currentState.length,
+        mode: QuizSessionMode.mistakesReview,
+      ),
+    );
   }
 
   void _submitAnswer(QuizAnswerSubmitted event, Emitter<QuizState> emit) {
@@ -203,6 +249,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
         score: currentState.score + attempt.score,
         bestScore: currentState.bestScore,
         length: currentState.length,
+        mode: currentState.mode,
         attempts: [...currentState.attempts, attempt],
         currentAttempt: attempt,
         completedDuration: completedDuration,
@@ -225,14 +272,16 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
         throw StateError('A completed quiz must have a measured duration.');
       }
       var bestScore = currentState.bestScore;
-      try {
-        bestScore = await _updateBestScore(
-          length: currentState.length,
-          candidate: currentState.score,
-          currentBest: bestScore,
-        );
-      } on Object catch (error, stackTrace) {
-        addError(error, stackTrace);
+      if (currentState.mode == QuizSessionMode.quickQuiz) {
+        try {
+          bestScore = await _updateBestScore(
+            length: currentState.length,
+            candidate: currentState.score,
+            currentBest: bestScore,
+          );
+        } on Object catch (error, stackTrace) {
+          addError(error, stackTrace);
+        }
       }
       emit(
         QuizCompleted(
@@ -241,6 +290,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
           duration: duration,
           bestScore: bestScore,
           length: currentState.length,
+          mode: currentState.mode,
           attempts: currentState.attempts,
         ),
       );
@@ -254,6 +304,7 @@ final class QuizBloc extends Bloc<QuizEvent, QuizState> {
         score: currentState.score,
         bestScore: currentState.bestScore,
         length: currentState.length,
+        mode: currentState.mode,
         attempts: currentState.attempts,
       ),
     );

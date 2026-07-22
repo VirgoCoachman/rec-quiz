@@ -1,0 +1,1 @@
+enum QuizSessionMode { quickQuiz, mistakesReview }

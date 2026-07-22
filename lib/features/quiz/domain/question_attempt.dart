@@ -10,6 +10,7 @@ final class QuestionAttempt {
   final Question _question;
   final AnswerEvaluation _evaluation;
 
+  Question get question => _question;
   String get questionId => _question.id;
   String get prompt => _question.prompt;
   bool get isCorrect => _evaluation.isCorrect;

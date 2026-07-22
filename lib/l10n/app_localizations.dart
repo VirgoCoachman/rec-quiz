@@ -202,6 +202,24 @@ abstract class AppLocalizations {
   /// **'Résultat'**
   String get resultHeading;
 
+  /// No description provided for @mistakesReviewCompletedHeading.
+  ///
+  /// In fr, this message translates to:
+  /// **'Révision terminée'**
+  String get mistakesReviewCompletedHeading;
+
+  /// No description provided for @reviewMistakesButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Revoir mes erreurs ({count})'**
+  String reviewMistakesButton(int count);
+
+  /// No description provided for @newQuickQuizButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouveau quiz rapide'**
+  String get newQuickQuizButton;
+
   /// No description provided for @detailedReviewHeading.
   ///
   /// In fr, this message translates to:

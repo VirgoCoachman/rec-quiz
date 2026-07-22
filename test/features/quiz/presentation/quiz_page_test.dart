@@ -92,6 +92,7 @@ void main() {
     expect(sessionTimer.stopCount, 1);
     expect(find.text('Correction détaillée'), findsOneWidget);
     expect(find.text('réponse correcte'), findsNWidgets(10));
+    expect(find.bySemanticsLabel('Revoir mes erreurs (0)'), findsNothing);
     for (var index = 0; index < firstOrder.length; index++) {
       final reviewCard = find.bySemanticsLabel(
         'Question ${index + 1} : réponse correcte',
@@ -405,6 +406,86 @@ void main() {
     );
     expect(find.text(first.explanation), findsOneWidget);
     expect(find.text(first.biblicalReference), findsOneWidget);
+  });
+
+  testWidgets('reviews only quick quiz mistakes and returns to a quick quiz', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final seeds = _SeedSequence([42, 99]);
+    final firstOrder = const QuizQuestionSelector().select(
+      questions: questions,
+      count: 10,
+      seed: 42,
+    );
+    final secondOrder = const QuizQuestionSelector().select(
+      questions: questions,
+      count: 10,
+      seed: 99,
+    );
+    final missedQuestion = firstOrder.first;
+    final incorrectOption = missedQuestion.options.firstWhere(
+      (option) => option.id != missedQuestion.correctOptionId,
+    );
+
+    await tester.pumpWidget(
+      RecQuizApp(
+        questionRepository: _FakeQuestionRepository(questions),
+        bestScoreRepository: _MemoryBestScoreRepository({}),
+        soundSettingsRepository: _MemorySoundSettingsRepository(false),
+        quizFeedbackPlayer: _RecordingQuizFeedbackPlayer(),
+        quizSessionTimer: _FakeQuizSessionTimer(const Duration(seconds: 30)),
+        seedGenerator: seeds.next,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Commencer'));
+    await tester.pumpAndSettle();
+
+    for (var index = 0; index < firstOrder.length; index++) {
+      final selectedOption = index == 0
+          ? incorrectOption
+          : firstOrder[index].correctOption;
+      await tester.tap(find.text(selectedOption.label));
+      await tester.pumpAndSettle();
+      final action = find.text(
+        index == firstOrder.length - 1
+            ? 'Voir mon résultat'
+            : 'Question suivante',
+      );
+      await tester.ensureVisible(action);
+      await tester.tap(action);
+      await tester.pumpAndSettle();
+    }
+
+    expect(find.text('Votre score : 9/10'), findsOneWidget);
+    final reviewButton = find.bySemanticsLabel('Revoir mes erreurs (1)');
+    expect(reviewButton, findsOneWidget);
+    await tester.ensureVisible(reviewButton);
+    await tester.tap(reviewButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Question 1 sur 1'), findsOneWidget);
+    expect(find.text(missedQuestion.prompt), findsOneWidget);
+    await tester.tap(find.text(missedQuestion.correctOption.label));
+    await tester.pumpAndSettle();
+    final showResult = find.text('Voir mon résultat');
+    await tester.ensureVisible(showResult);
+    await tester.tap(showResult);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Révision terminée'), findsOneWidget);
+    expect(find.text('Votre score : 1/1'), findsOneWidget);
+    expect(find.textContaining('Meilleur score'), findsNothing);
+    expect(find.bySemanticsLabel('Revoir mes erreurs (1)'), findsNothing);
+    final newQuickQuiz = find.text('Nouveau quiz rapide');
+    await tester.ensureVisible(newQuickQuiz);
+    await tester.tap(newQuickQuiz);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Question 1 sur 10'), findsOneWidget);
+    expect(find.text(secondOrder.first.prompt), findsOneWidget);
+    semantics.dispose();
   });
 }
 

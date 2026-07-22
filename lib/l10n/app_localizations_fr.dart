@@ -74,6 +74,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String get resultHeading => 'Résultat';
 
   @override
+  String get mistakesReviewCompletedHeading => 'Révision terminée';
+
+  @override
+  String reviewMistakesButton(int count) {
+    return 'Revoir mes erreurs ($count)';
+  }
+
+  @override
+  String get newQuickQuizButton => 'Nouveau quiz rapide';
+
+  @override
   String get detailedReviewHeading => 'Correction détaillée';
 
   @override

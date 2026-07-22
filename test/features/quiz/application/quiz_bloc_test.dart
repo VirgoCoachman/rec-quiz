@@ -8,6 +8,7 @@ import 'package:rec_quiz/features/quiz/domain/best_score_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/question.dart';
 import 'package:rec_quiz/features/quiz/domain/question_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/quiz_question_selector.dart';
+import 'package:rec_quiz/features/quiz/domain/quiz_session_mode.dart';
 import 'package:rec_quiz/features/quiz/domain/quiz_session_timer.dart';
 import 'package:rec_quiz/features/quiz/domain/quick_quiz_length.dart';
 
@@ -197,6 +198,131 @@ void main() {
       expect(bestScoreRepository.savedScores, [(QuickQuizLength.ten, 10)]);
       expect(sessionTimer.startCount, 1);
       expect(sessionTimer.stopCount, 1);
+    },
+  );
+
+  test(
+    'starts a review containing only the mistakes from the quick quiz',
+    () async {
+      final bloc = _buildBloc(
+        startQuizSession,
+        bestScoreRepository,
+        sessionTimer,
+      );
+      addTearDown(bloc.close);
+      bloc.add(const QuizStarted());
+      await Future<void>.delayed(Duration.zero);
+
+      final missedQuestionIds = <String>[];
+      for (var index = 0; index < 10; index++) {
+        final ready = bloc.state as QuizQuestionReady;
+        final shouldMiss = index == 1 || index == 4;
+        if (shouldMiss) {
+          missedQuestionIds.add(ready.question.id);
+        }
+        bloc.add(
+          QuizAnswerSubmitted(
+            shouldMiss
+                ? ready.question.options
+                      .firstWhere(
+                        (option) => option.id != ready.question.correctOptionId,
+                      )
+                      .id
+                : ready.question.correctOptionId,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const QuizNextRequested());
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      final quickResult = bloc.state as QuizCompleted;
+      expect(quickResult.mode, QuizSessionMode.quickQuiz);
+      expect(quickResult.incorrectAttempts, hasLength(2));
+
+      bloc
+        ..add(const QuizMistakesReviewStarted())
+        ..add(const QuizMistakesReviewStarted());
+      await Future<void>.delayed(Duration.zero);
+
+      final review = bloc.state as QuizQuestionReady;
+      expect(review.mode, QuizSessionMode.mistakesReview);
+      expect(review.totalQuestions, 2);
+      expect(
+        review.questions.map((question) => question.id),
+        missedQuestionIds,
+      );
+      expect(review.attempts, isEmpty);
+      expect(sessionTimer.startCount, 2);
+    },
+  );
+
+  test('does not start a mistakes review after a perfect quick quiz', () async {
+    final bloc = _buildBloc(
+      startQuizSession,
+      bestScoreRepository,
+      sessionTimer,
+    );
+    addTearDown(bloc.close);
+    bloc.add(const QuizStarted());
+    await Future<void>.delayed(Duration.zero);
+    await _completePerfectSession(bloc);
+
+    final completed = bloc.state;
+    bloc.add(const QuizMistakesReviewStarted());
+    await Future<void>.delayed(Duration.zero);
+
+    expect(identical(bloc.state, completed), isTrue);
+    expect(sessionTimer.startCount, 1);
+  });
+
+  test(
+    'completes a mistakes review without changing the quick best score',
+    () async {
+      bestScoreRepository.scores[QuickQuizLength.five] = 3;
+      final bloc = _buildBloc(
+        startQuizSession,
+        bestScoreRepository,
+        sessionTimer,
+      );
+      addTearDown(bloc.close);
+      bloc.add(const QuizLengthSelected(QuickQuizLength.five));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const QuizStarted());
+      await Future<void>.delayed(Duration.zero);
+
+      for (var index = 0; index < 5; index++) {
+        final ready = bloc.state as QuizQuestionReady;
+        final optionId = index == 0
+            ? ready.question.options
+                  .firstWhere(
+                    (option) => option.id != ready.question.correctOptionId,
+                  )
+                  .id
+            : ready.question.correctOptionId;
+        bloc.add(QuizAnswerSubmitted(optionId));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const QuizNextRequested());
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      bloc.add(const QuizMistakesReviewStarted());
+      await Future<void>.delayed(Duration.zero);
+      await _completePerfectSession(bloc);
+
+      final reviewResult = bloc.state as QuizCompleted;
+      expect(reviewResult.mode, QuizSessionMode.mistakesReview);
+      expect(reviewResult.score, 1);
+      expect(reviewResult.totalQuestions, 1);
+      expect(reviewResult.bestScore, 4);
+      expect(bestScoreRepository.savedScores, [(QuickQuizLength.five, 4)]);
+
+      bloc.add(const QuizRestarted());
+      await Future<void>.delayed(Duration.zero);
+      final restarted = bloc.state as QuizQuestionReady;
+      expect(restarted.mode, QuizSessionMode.quickQuiz);
+      expect(restarted.length, QuickQuizLength.five);
+      expect(restarted.totalQuestions, 5);
     },
   );
 

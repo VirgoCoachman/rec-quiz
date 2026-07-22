@@ -6,6 +6,7 @@ import '../application/quiz_bloc.dart';
 import '../domain/question.dart';
 import '../domain/question_attempt.dart';
 import '../domain/quick_quiz_length.dart';
+import '../domain/quiz_session_mode.dart';
 import '../../settings/application/sound_settings_cubit.dart';
 
 final class QuizPage extends StatelessWidget {
@@ -379,6 +380,9 @@ final class _ResultView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMistakesReview = state.mode == QuizSessionMode.mistakesReview;
+    final incorrectCount = state.incorrectAttempts.length;
+
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -388,7 +392,9 @@ final class _ResultView extends StatelessWidget {
             const Icon(Icons.emoji_events_rounded, size: 72),
             const SizedBox(height: 20),
             Text(
-              strings.resultHeading,
+              isMistakesReview
+                  ? strings.mistakesReviewCompletedHeading
+                  : strings.resultHeading,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 12),
@@ -397,11 +403,13 @@ final class _ResultView extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
-            Text(
-              strings.bestScore(state.bestScore, state.totalQuestions),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
+            if (!isMistakesReview) ...[
+              Text(
+                strings.bestScore(state.bestScore, state.totalQuestions),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+            ],
             Text(
               strings.sessionDuration(
                 state.duration.inMinutes,
@@ -424,11 +432,31 @@ final class _ResultView extends StatelessWidget {
               const SizedBox(height: 12),
             ],
             const SizedBox(height: 16),
+            if (!isMistakesReview && incorrectCount > 0) ...[
+              Semantics(
+                label: strings.reviewMistakesButton(incorrectCount),
+                button: true,
+                child: ExcludeSemantics(
+                  child: FilledButton.icon(
+                    onPressed: () => context.read<QuizBloc>().add(
+                      const QuizMistakesReviewStarted(),
+                    ),
+                    icon: const Icon(Icons.replay_rounded),
+                    label: Text(strings.reviewMistakesButton(incorrectCount)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             FilledButton.icon(
               onPressed: () =>
                   context.read<QuizBloc>().add(const QuizRestarted()),
               icon: const Icon(Icons.refresh_rounded),
-              label: Text(strings.restartButton),
+              label: Text(
+                isMistakesReview
+                    ? strings.newQuickQuizButton
+                    : strings.restartButton,
+              ),
             ),
           ],
         ),
