@@ -180,6 +180,186 @@
       "languageCode": "fr",
       "contentVersion": 1,
       "isActive": true
+    },
+    {
+      "id": "fr-2ch-13-abijah-reliance-v1",
+      "prompt": "Pourquoi Juda remporta-t-il la victoire contre Israël sous le règne d’Abija ?",
+      "options": [
+        {"id": "relied-on-lord", "label": "Parce que les hommes de Juda s’étaient appuyés sur l’Éternel"},
+        {"id": "larger-army", "label": "Parce que l’armée de Juda était la plus nombreuse"},
+        {"id": "foreign-alliance", "label": "Parce qu’Abija avait conclu une alliance étrangère"}
+      ],
+      "correctOptionId": "relied-on-lord",
+      "explanation": "Les hommes de Juda remportèrent la victoire parce qu’ils s’étaient appuyés sur l’Éternel, le Dieu de leurs pères.",
+      "biblicalReference": "2 Chroniques 13:13-18",
+      "difficulty": "medium",
+      "theme": "fidelite",
+      "subject": "Abija",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-21-joram-apostasy-v1",
+      "prompt": "Quel roi de Juda marcha dans la voie de la maison d’Achab et entraîna Juda dans l’infidélité ?",
+      "options": [
+        {"id": "joram", "label": "Joram"},
+        {"id": "jehoshaphat", "label": "Josaphat"},
+        {"id": "jotham", "label": "Jotham"}
+      ],
+      "correctOptionId": "joram",
+      "explanation": "Joram fit ce qui est mal aux yeux de l’Éternel et entraîna Juda dans l’infidélité.",
+      "biblicalReference": "2 Chroniques 21:5-13",
+      "difficulty": "medium",
+      "theme": "apostasie",
+      "subject": "Joram",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-22-athaliah-usurpation-v1",
+      "prompt": "Qui tenta de faire périr la descendance royale de Juda après la mort d’Achazia ?",
+      "options": [
+        {"id": "athaliah", "label": "Athalie"},
+        {"id": "jehoiada", "label": "Jehojada"},
+        {"id": "joash", "label": "Joas"}
+      ],
+      "correctOptionId": "athaliah",
+      "explanation": "Athalie tenta d’éliminer la descendance royale, mais Joas fut caché et préservé.",
+      "biblicalReference": "2 Chroniques 22:10-12",
+      "difficulty": "medium",
+      "theme": "dynastie_de_david",
+      "subject": "Athalie",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-24-joash-temple-repair-v1",
+      "prompt": "Quel projet Joas entreprit-il au début de 2 Chroniques 24 ?",
+      "options": [
+        {"id": "repair-temple", "label": "Réparer la maison de l’Éternel"},
+        {"id": "build-palace", "label": "Construire un nouveau palais royal"},
+        {"id": "fortify-samaria", "label": "Fortifier la ville de Samarie"}
+      ],
+      "correctOptionId": "repair-temple",
+      "explanation": "Joas organisa la collecte et les travaux nécessaires pour réparer la maison de l’Éternel.",
+      "biblicalReference": "2 Chroniques 24:4-14",
+      "difficulty": "easy",
+      "theme": "temple",
+      "subject": "Joas",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-26-uzziah-pride-v1",
+      "prompt": "Quelle conséquence atteignit Ozias lorsqu’il voulut offrir lui-même le parfum dans le Temple ?",
+      "options": [
+        {"id": "leprosy", "label": "La lèpre apparut sur son front"},
+        {"id": "exile", "label": "Il fut emmené captif à Babylone"},
+        {"id": "blindness", "label": "Il devint aveugle"}
+      ],
+      "correctOptionId": "leprosy",
+      "explanation": "Après s’être enorgueilli et avoir empiété sur le service des sacrificateurs, Ozias fut frappé de lèpre.",
+      "biblicalReference": "2 Chroniques 26:16-21",
+      "difficulty": "hard",
+      "theme": "orgueil",
+      "subject": "Ozias",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-27-jotham-strength-v1",
+      "prompt": "Pourquoi Jotham devint-il puissant selon 2 Chroniques 27 ?",
+      "options": [
+        {"id": "ordered-ways", "label": "Parce qu’il affermit ses voies devant l’Éternel"},
+        {"id": "egypt-alliance", "label": "Parce qu’il s’allia avec l’Égypte"},
+        {"id": "temple-treasures", "label": "Parce qu’il prit les trésors du Temple"}
+      ],
+      "correctOptionId": "ordered-ways",
+      "explanation": "Jotham devint puissant parce qu’il affermit ses voies devant l’Éternel, son Dieu.",
+      "biblicalReference": "2 Chroniques 27:5-6",
+      "difficulty": "medium",
+      "theme": "fidelite",
+      "subject": "Jotham",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-28-ahaz-apostasy-v1",
+      "prompt": "Quel roi est principalement présenté dans 2 Chroniques 28 ?",
+      "options": [
+        {"id": "ahaz", "label": "Achaz"},
+        {"id": "jotham", "label": "Jotham"},
+        {"id": "hezekiah", "label": "Ézéchias"}
+      ],
+      "correctOptionId": "ahaz",
+      "explanation": "2 Chroniques 28 présente l’apostasie profonde d’Achaz et l’humiliation de Juda.",
+      "biblicalReference": "2 Chroniques 28:1-27",
+      "difficulty": "easy",
+      "theme": "carte_biblique",
+      "subject": "Achaz",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-33-amon-humility-v1",
+      "prompt": "Quelle différence 2 Chroniques 33 souligne-t-il entre Amon et son père Manassé ?",
+      "options": [
+        {"id": "did-not-humble", "label": "Amon ne s’humilia pas comme Manassé"},
+        {"id": "rebuilt-temple", "label": "Amon reconstruisit le Temple"},
+        {"id": "returned-exiles", "label": "Amon ramena les exilés à Jérusalem"}
+      ],
+      "correctOptionId": "did-not-humble",
+      "explanation": "Contrairement à Manassé après sa détresse, Amon ne s’humilia pas devant l’Éternel.",
+      "biblicalReference": "2 Chroniques 33:21-25",
+      "difficulty": "medium",
+      "theme": "humilite",
+      "subject": "Amon",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-36-last-kings-order-v1",
+      "prompt": "Quelle séquence des quatre derniers rois de Juda est correcte dans 2 Chroniques 36 ?",
+      "options": [
+        {"id": "correct-order", "label": "Joachaz, Jojakim, Jojakin, Sédécias"},
+        {"id": "swapped-middle", "label": "Joachaz, Jojakin, Jojakim, Sédécias"},
+        {"id": "reversed-start", "label": "Jojakim, Joachaz, Sédécias, Jojakin"}
+      ],
+      "correctOptionId": "correct-order",
+      "explanation": "2 Chroniques 36 présente successivement Joachaz, Jojakim, Jojakin puis Sédécias avant la chute de Jérusalem.",
+      "biblicalReference": "2 Chroniques 36:1-21",
+      "difficulty": "hard",
+      "theme": "ordre_chronologique",
+      "subject": "Derniers rois de Juda",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
+    },
+    {
+      "id": "fr-2ch-36-cyrus-decree-v1",
+      "prompt": "Que permit la proclamation de Cyrus à la fin de 2 Chroniques ?",
+      "options": [
+        {"id": "return-rebuild", "label": "Le retour vers Jérusalem et la reconstruction de la maison de l’Éternel"},
+        {"id": "new-exile", "label": "Une nouvelle déportation vers Babylone"},
+        {"id": "kingdom-division", "label": "La division du royaume de Juda"}
+      ],
+      "correctOptionId": "return-rebuild",
+      "explanation": "Cyrus invita les membres du peuple de Dieu à monter à Jérusalem pour y rebâtir la maison de l’Éternel.",
+      "biblicalReference": "2 Chroniques 36:22-23",
+      "difficulty": "easy",
+      "theme": "restauration",
+      "subject": "Cyrus",
+      "languageCode": "fr",
+      "contentVersion": 1,
+      "isActive": true
     }
   ]
 }

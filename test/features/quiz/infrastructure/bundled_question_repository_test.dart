@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:rec_quiz/features/quiz/domain/question.dart';
 import 'package:rec_quiz/features/quiz/infrastructure/bundled_question_repository.dart';
 import 'package:rec_quiz/features/quiz/infrastructure/question_dto.dart';
 
@@ -25,34 +28,75 @@ void main() {
     });
   });
 
-  test(
-    'bundled content starts at 1 Chronicles 10 and excludes genealogies',
-    () async {
-      final repository = BundledQuestionRepository();
+  test('bundled content is broad, diverse, and excludes genealogies', () async {
+    final repository = BundledQuestionRepository();
 
-      final questions = await repository.loadActiveQuestions();
+    final questions = await repository.loadActiveQuestions();
 
-      expect(questions, hasLength(10));
-      expect(questions.map((question) => question.id).toSet(), hasLength(10));
-      expect(questions.first.biblicalReference, startsWith('1 Chroniques 10'));
-      expect(
-        questions
-            .expand((question) sync* {
-              yield question.prompt;
-              yield question.explanation;
-              yield question.subject;
-              yield* question.options.map((option) => option.label);
-            })
-            .map((text) => text.toLowerCase()),
-        everyElement(
-          allOf(
-            isNot(contains('généalog')),
-            isNot(contains('1 chroniques 1 à 9')),
-          ),
+    expect(questions.length, greaterThanOrEqualTo(20));
+    expect(
+      questions.map((question) => question.id).toSet(),
+      hasLength(questions.length),
+    );
+    expect(questions.first.biblicalReference, startsWith('1 Chroniques 10'));
+    expect(
+      questions.map((question) => question.difficulty).toSet(),
+      QuestionDifficulty.values.toSet(),
+    );
+    expect(
+      questions.map((question) => question.subject).toSet(),
+      containsAll(<String>[
+        'Abija',
+        'Joram',
+        'Athalie',
+        'Joas',
+        'Ozias',
+        'Jotham',
+        'Achaz',
+        'Amon',
+        'Derniers rois de Juda',
+        'Cyrus',
+      ]),
+    );
+    expect(
+      questions
+          .expand((question) sync* {
+            yield question.prompt;
+            yield question.explanation;
+            yield question.subject;
+            yield* question.options.map((option) => option.label);
+          })
+          .map((text) => text.toLowerCase()),
+      everyElement(
+        allOf(
+          isNot(contains('généalog')),
+          isNot(contains('1 chroniques 1 à 9')),
         ),
-      );
-    },
-  );
+      ),
+    );
+  });
+
+  test('rejects an unsupported seed schema version', () async {
+    final repository = BundledQuestionRepository(
+      assetTextLoader: (_) async => jsonEncode({
+        'schemaVersion': 2,
+        'questions': [_validJson],
+      }),
+    );
+
+    expect(repository.loadActiveQuestions(), throwsFormatException);
+  });
+
+  test('rejects duplicate question identifiers', () async {
+    final repository = BundledQuestionRepository(
+      assetTextLoader: (_) async => jsonEncode({
+        'schemaVersion': 1,
+        'questions': [_validJson, _validJson],
+      }),
+    );
+
+    expect(repository.loadActiveQuestions(), throwsFormatException);
+  });
 }
 
 final Map<String, Object?> _validJson = {
