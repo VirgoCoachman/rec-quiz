@@ -1,0 +1,65 @@
+{
+  "@@locale": "fr",
+  "appTitle": "Quiz REC",
+  "welcomeMessage": "Découvre l’histoire des rois dans les Chroniques, une question à la fois.",
+  "startButton": "Commencer",
+  "enableSoundButton": "Activer le son",
+  "disableSoundButton": "Désactiver le son",
+  "questionProgress": "Question {current} sur {total}",
+  "@questionProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "answerSemantics": "Réponse : {answer}",
+  "@answerSemantics": {
+    "placeholders": {"answer": {"type": "String"}}
+  },
+  "correctFeedback": "Bonne réponse !",
+  "incorrectFeedback": "Ce n’est pas la bonne réponse.",
+  "correctAnswer": "Bonne réponse : {answer}",
+  "@correctAnswer": {
+    "placeholders": {"answer": {"type": "String"}}
+  },
+  "biblicalReferenceHeading": "Référence biblique",
+  "explanationHeading": "À retenir",
+  "nextQuestionButton": "Question suivante",
+  "showResultButton": "Voir mon résultat",
+  "resultHeading": "Résultat",
+  "detailedReviewHeading": "Correction détaillée",
+  "correctAnswerStatus": "réponse correcte",
+  "incorrectAnswerStatus": "réponse incorrecte",
+  "reviewQuestionNumber": "Question {number}",
+  "@reviewQuestionNumber": {
+    "placeholders": {"number": {"type": "int"}}
+  },
+  "attemptSemantics": "Question {number} : {status}",
+  "@attemptSemantics": {
+    "placeholders": {
+      "number": {"type": "int"},
+      "status": {"type": "String"}
+    }
+  },
+  "selectedAnswer": "Votre réponse : {answer}",
+  "@selectedAnswer": {
+    "placeholders": {"answer": {"type": "String"}}
+  },
+  "score": "Votre score : {score}/{total}",
+  "@score": {
+    "placeholders": {
+      "score": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "bestScore": "Meilleur score : {score}/{total}",
+  "@bestScore": {
+    "placeholders": {
+      "score": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "restartButton": "Recommencer",
+  "loadError": "Impossible de charger les questions.",
+  "retryButton": "Réessayer"
+}
