@@ -3,6 +3,8 @@
   "appTitle": "Quiz REC",
   "welcomeMessage": "Découvre l’histoire des rois dans les Chroniques, une question à la fois.",
   "startButton": "Commencer",
+  "enableSoundButton": "Activer le son",
+  "disableSoundButton": "Désactiver le son",
   "questionProgress": "Question {current} sur {total}",
   "@questionProgress": {
     "placeholders": {

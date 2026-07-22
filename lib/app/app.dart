@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../core/audio/method_channel_quiz_feedback_player.dart';
+import '../core/audio/quiz_feedback_player.dart';
 import '../features/quiz/application/quiz_bloc.dart';
 import '../features/quiz/application/load_best_score.dart';
 import '../features/quiz/application/start_quiz_session.dart';
@@ -10,19 +12,26 @@ import '../features/quiz/domain/question_repository.dart';
 import '../features/quiz/domain/quiz_question_selector.dart';
 import '../features/quiz/infrastructure/bundled_question_repository.dart';
 import '../features/quiz/presentation/quiz_page.dart';
+import '../features/quiz/presentation/quiz_feedback_listener.dart';
+import '../features/settings/application/sound_settings_cubit.dart';
+import '../features/settings/domain/sound_settings_repository.dart';
 import '../l10n/app_localizations.dart';
 
 final class RecQuizApp extends StatelessWidget {
   const RecQuizApp({
     required this.bestScoreRepository,
+    required this.soundSettingsRepository,
     super.key,
     this.questionRepository,
     this.seedGenerator,
+    this.quizFeedbackPlayer = const MethodChannelQuizFeedbackPlayer(),
   });
 
   final BestScoreRepository bestScoreRepository;
+  final SoundSettingsRepository soundSettingsRepository;
   final QuestionRepository? questionRepository;
   final SeedGenerator? seedGenerator;
+  final QuizFeedbackPlayer quizFeedbackPlayer;
 
   @override
   Widget build(BuildContext context) {
@@ -37,17 +46,27 @@ final class RecQuizApp extends StatelessWidget {
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       theme: _buildTheme(),
-      home: BlocProvider(
-        create: (_) => QuizBloc(
-          StartQuizSession(
-            repository: repository,
-            selector: const QuizQuestionSelector(),
-            seedGenerator: generateSeed,
+      home: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (_) => SoundSettingsCubit(soundSettingsRepository)..load(),
           ),
-          LoadBestScore(bestScoreRepository),
-          UpdateBestScore(bestScoreRepository),
-        )..add(const QuizInitialized()),
-        child: const QuizPage(),
+          BlocProvider(
+            create: (_) => QuizBloc(
+              StartQuizSession(
+                repository: repository,
+                selector: const QuizQuestionSelector(),
+                seedGenerator: generateSeed,
+              ),
+              LoadBestScore(bestScoreRepository),
+              UpdateBestScore(bestScoreRepository),
+            )..add(const QuizInitialized()),
+          ),
+        ],
+        child: QuizFeedbackListener(
+          player: quizFeedbackPlayer,
+          child: const QuizPage(),
+        ),
       ),
     );
   }

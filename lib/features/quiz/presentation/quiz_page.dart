@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/quiz_bloc.dart';
 import '../domain/question.dart';
+import '../../settings/application/sound_settings_cubit.dart';
 
 final class QuizPage extends StatelessWidget {
   const QuizPage({super.key});
@@ -13,7 +14,39 @@ final class QuizPage extends StatelessWidget {
     final strings = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(strings.appTitle)),
+      appBar: AppBar(
+        title: Text(strings.appTitle),
+        actions: [
+          BlocBuilder<SoundSettingsCubit, SoundSettingsState>(
+            builder: (context, soundState) {
+              final isEnabled = soundState.isEnabled;
+              final label = isEnabled
+                  ? strings.disableSoundButton
+                  : strings.enableSoundButton;
+              return Semantics(
+                label: label,
+                button: true,
+                enabled: !soundState.isLoading,
+                child: ExcludeSemantics(
+                  child: IconButton(
+                    onPressed: soundState.isLoading
+                        ? null
+                        : () => context.read<SoundSettingsCubit>().setEnabled(
+                            !isEnabled,
+                          ),
+                    tooltip: label,
+                    icon: Icon(
+                      isEnabled
+                          ? Icons.volume_up_rounded
+                          : Icons.volume_off_rounded,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: SafeArea(
         child: BlocBuilder<QuizBloc, QuizState>(
           builder: (context, state) {

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rec_quiz/app/app.dart';
+import 'package:rec_quiz/core/audio/quiz_feedback_player.dart';
 import 'package:rec_quiz/features/quiz/domain/best_score_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/question.dart';
 import 'package:rec_quiz/features/quiz/domain/question_repository.dart';
 import 'package:rec_quiz/features/quiz/domain/quiz_question_selector.dart';
+import 'package:rec_quiz/features/settings/domain/sound_settings_repository.dart';
 
 import '../quiz_test_data.dart';
 
@@ -15,6 +17,8 @@ void main() {
     final semantics = tester.ensureSemantics();
     final seeds = _SeedSequence([42, 99]);
     final bestScoreRepository = _MemoryBestScoreRepository(7);
+    final soundRepository = _MemorySoundSettingsRepository(true);
+    final feedbackPlayer = _RecordingQuizFeedbackPlayer();
     final firstOrder = const QuizQuestionSelector().select(
       questions: questions,
       count: 10,
@@ -30,6 +34,8 @@ void main() {
       RecQuizApp(
         questionRepository: _FakeQuestionRepository(questions),
         bestScoreRepository: bestScoreRepository,
+        soundSettingsRepository: soundRepository,
+        quizFeedbackPlayer: feedbackPlayer,
         seedGenerator: seeds.next,
       ),
     );
@@ -37,6 +43,7 @@ void main() {
 
     expect(find.text('Quiz REC'), findsOneWidget);
     expect(find.text('Meilleur score : 7/10'), findsOneWidget);
+    expect(find.bySemanticsLabel('Désactiver le son'), findsOneWidget);
     await tester.tap(find.text('Commencer'));
     await tester.pumpAndSettle();
 
@@ -68,6 +75,8 @@ void main() {
 
     expect(find.text('Votre score : 10/10'), findsOneWidget);
     expect(find.text('Meilleur score : 10/10'), findsOneWidget);
+    expect(feedbackPlayer.correctAnswerCount, 10);
+    expect(feedbackPlayer.incorrectAnswerCount, 0);
 
     await tester.tap(find.text('Recommencer'));
     await tester.pumpAndSettle();
@@ -82,6 +91,8 @@ void main() {
       RecQuizApp(
         questionRepository: _FakeQuestionRepository(questions),
         bestScoreRepository: bestScoreRepository,
+        soundSettingsRepository: soundRepository,
+        quizFeedbackPlayer: feedbackPlayer,
         seedGenerator: () => 99,
       ),
     );
@@ -98,6 +109,8 @@ void main() {
       RecQuizApp(
         questionRepository: _FailingQuestionRepository(),
         bestScoreRepository: _MemoryBestScoreRepository(0),
+        soundSettingsRepository: _MemorySoundSettingsRepository(true),
+        quizFeedbackPlayer: _RecordingQuizFeedbackPlayer(),
         seedGenerator: () => 42,
       ),
     );
@@ -121,11 +134,14 @@ void main() {
     final incorrect = first.options.firstWhere(
       (option) => option.id != first.correctOptionId,
     );
+    final feedbackPlayer = _RecordingQuizFeedbackPlayer();
 
     await tester.pumpWidget(
       RecQuizApp(
         questionRepository: _FakeQuestionRepository(questions),
         bestScoreRepository: _MemoryBestScoreRepository(0),
+        soundSettingsRepository: _MemorySoundSettingsRepository(true),
+        quizFeedbackPlayer: feedbackPlayer,
         seedGenerator: () => 42,
       ),
     );
@@ -142,12 +158,93 @@ void main() {
     );
     expect(find.byIcon(Icons.cancel_outlined), findsOneWidget);
     expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+    expect(feedbackPlayer.correctAnswerCount, 0);
+    expect(feedbackPlayer.incorrectAnswerCount, 1);
 
     final nextButton = find.text('Question suivante');
     await tester.ensureVisible(nextButton);
     await tester.tap(nextButton);
     await tester.pumpAndSettle();
     expect(find.text('Question 2 sur 10'), findsOneWidget);
+  });
+
+  testWidgets('disables sound and restores the preference after restart', (
+    tester,
+  ) async {
+    final soundRepository = _MemorySoundSettingsRepository(true);
+    final feedbackPlayer = _RecordingQuizFeedbackPlayer();
+    final firstQuestion = const QuizQuestionSelector()
+        .select(questions: questions, count: 10, seed: 42)
+        .first;
+
+    await tester.pumpWidget(
+      RecQuizApp(
+        questionRepository: _FakeQuestionRepository(questions),
+        bestScoreRepository: _MemoryBestScoreRepository(0),
+        soundSettingsRepository: soundRepository,
+        quizFeedbackPlayer: feedbackPlayer,
+        seedGenerator: () => 42,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('Désactiver le son'));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Activer le son'), findsOneWidget);
+
+    await tester.tap(find.text('Commencer'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(firstQuestion.correctOption.label));
+    await tester.pumpAndSettle();
+
+    expect(feedbackPlayer.correctAnswerCount, 0);
+    expect(soundRepository.isEnabled, isFalse);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    await tester.pumpWidget(
+      RecQuizApp(
+        questionRepository: _FakeQuestionRepository(questions),
+        bestScoreRepository: _MemoryBestScoreRepository(0),
+        soundSettingsRepository: soundRepository,
+        quizFeedbackPlayer: feedbackPlayer,
+        seedGenerator: () => 42,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('Activer le son'), findsOneWidget);
+  });
+
+  testWidgets('keeps the quiz usable when audio playback fails', (
+    tester,
+  ) async {
+    final reportedErrors = <FlutterErrorDetails>[];
+    final previousHandler = FlutterError.onError;
+    FlutterError.onError = reportedErrors.add;
+    addTearDown(() => FlutterError.onError = previousHandler);
+    final firstQuestion = const QuizQuestionSelector()
+        .select(questions: questions, count: 10, seed: 42)
+        .first;
+
+    await tester.pumpWidget(
+      RecQuizApp(
+        questionRepository: _FakeQuestionRepository(questions),
+        bestScoreRepository: _MemoryBestScoreRepository(0),
+        soundSettingsRepository: _MemorySoundSettingsRepository(true),
+        quizFeedbackPlayer: _FailingQuizFeedbackPlayer(),
+        seedGenerator: () => 42,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Commencer'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(firstQuestion.correctOption.label));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bonne réponse !'), findsOneWidget);
+    expect(find.text('Question suivante'), findsOneWidget);
+    expect(reportedErrors, hasLength(1));
   });
 }
 
@@ -178,6 +275,42 @@ final class _MemoryBestScoreRepository implements BestScoreRepository {
   @override
   Future<void> saveBestScore(int score) async {
     this.score = score;
+  }
+}
+
+final class _MemorySoundSettingsRepository implements SoundSettingsRepository {
+  _MemorySoundSettingsRepository(this.isEnabled);
+
+  bool isEnabled;
+
+  @override
+  Future<bool> loadSoundEnabled() async => isEnabled;
+
+  @override
+  Future<void> saveSoundEnabled(bool isEnabled) async {
+    this.isEnabled = isEnabled;
+  }
+}
+
+class _RecordingQuizFeedbackPlayer implements QuizFeedbackPlayer {
+  var correctAnswerCount = 0;
+  var incorrectAnswerCount = 0;
+
+  @override
+  Future<void> playCorrectAnswer() async {
+    correctAnswerCount++;
+  }
+
+  @override
+  Future<void> playIncorrectAnswer() async {
+    incorrectAnswerCount++;
+  }
+}
+
+final class _FailingQuizFeedbackPlayer extends _RecordingQuizFeedbackPlayer {
+  @override
+  Future<void> playCorrectAnswer() {
+    throw StateError('Audio unavailable');
   }
 }
 

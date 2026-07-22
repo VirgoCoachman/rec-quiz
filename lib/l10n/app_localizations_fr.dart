@@ -19,6 +19,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get startButton => 'Commencer';
 
   @override
+  String get enableSoundButton => 'Activer le son';
+
+  @override
+  String get disableSoundButton => 'Désactiver le son';
+
+  @override
   String questionProgress(int current, int total) {
     return 'Question $current sur $total';
   }

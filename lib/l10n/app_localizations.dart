@@ -112,6 +112,18 @@ abstract class AppLocalizations {
   /// **'Commencer'**
   String get startButton;
 
+  /// No description provided for @enableSoundButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Activer le son'**
+  String get enableSoundButton;
+
+  /// No description provided for @disableSoundButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Désactiver le son'**
+  String get disableSoundButton;
+
   /// No description provided for @questionProgress.
   ///
   /// In fr, this message translates to:
